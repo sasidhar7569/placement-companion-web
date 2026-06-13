@@ -5,12 +5,8 @@ const config = require('../../shared/config');
 describe('Form Validation Testing', function() {
     let driver;
 
-    before(async function() {
-        driver = await new Builder().forBrowser(config.web.browser).build();
-    });
-
-    after(async function() {
-        if (driver) await driver.quit();
+    before(function() {
+        driver = global.driver;
     });
 
     it('should show error for empty form submission', async function() {

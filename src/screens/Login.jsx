@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, UserPlus, LogIn } from 'lucide-react';
 
 // Temporary flag for testing APK without login
-const SKIP_LOGIN = true;
+const SKIP_LOGIN = false;
 
 const Login = () => {
   const navigate = useNavigate();
