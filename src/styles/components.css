@@ -1,0 +1,66 @@
+/* Bottom Navigation */
+.bottom-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--bottom-nav-height);
+  background: var(--surface-color);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border-top: 1px solid var(--border-color);
+  z-index: 100;
+  box-shadow: 0 -4px 6px -1px rgb(0 0 0 / 0.05);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex: 1;
+  height: 100%;
+  gap: 0.25rem;
+  transition: color 0.2s;
+}
+
+.nav-item.active {
+  color: var(--primary-color);
+}
+
+.nav-item.active .nav-icon {
+  transform: translateY(-2px);
+  color: var(--primary-color);
+}
+
+.nav-icon {
+  transition: transform 0.2s, color 0.2s;
+}
+
+.nav-label {
+  font-size: 0.65rem;
+  font-weight: 500;
+}
+
+/* Page Transitions */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateX(10px);
+}
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 300ms, transform 300ms;
+}
+.page-transition-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity 300ms, transform 300ms;
+}

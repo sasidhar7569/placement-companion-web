@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0f172a;
+  --color-card: rgba(30, 41, 59, 0.7);
+  --color-primary: #c026d3;
+  --color-secondary: #06b6d4;
+  --color-accent: #f43f5e;
+  --color-textMain: #f8fafc;
+  --color-textMuted: #94a3b8;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-textMain font-sans;
+    margin: 0;
+    overflow-x: hidden;
+  }
+  
+  .light-mode {
+    --color-background: #f8fafc;
+    --color-card: rgba(255, 255, 255, 0.95);
+    --color-textMain: #0f172a;
+    --color-textMuted: #475569;
+  }
+}
+
+@layer components {
+  /* Gen-Z Elegant Glassmorphism Cards */
+  .card {
+    @apply bg-card backdrop-blur-md border border-slate-700 rounded-2xl p-6 shadow-xl;
+  }
+
+  /* Vibrant Buttons */
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary to-secondary text-white font-bold py-2.5 px-6 rounded-full shadow-[0_0_15px_rgba(192,38,211,0.5)] hover:shadow-[0_0_25px_rgba(192,38,211,0.8)] hover:scale-105 transition-all duration-300;
+  }
+
+  .btn-outline {
+    @apply border-2 border-primary text-primary hover:bg-primary/10 font-bold py-2.5 px-6 rounded-full transition-all duration-300;
+  }
+
+  /* Form Elements */
+  .form-group {
+    @apply flex flex-col gap-2 mb-4;
+  }
+
+  .form-label {
+    @apply text-sm font-semibold text-textMuted;
+  }
+
+  .form-input {
+    @apply bg-slate-800/50 border border-slate-600 rounded-lg px-4 py-3 text-textMain focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-colors;
+  }
+
+  /* App Layout Containers */
+  .app-container {
+    @apply flex h-screen w-full overflow-hidden bg-background;
+  }
+
+  .sidebar {
+    @apply hidden md:flex flex-col w-64 h-full bg-slate-900 border-r border-slate-800 z-10;
+  }
+
+  .main-content {
+    @apply flex-1 flex flex-col h-full overflow-hidden relative;
+  }
+
+  .top-bar {
+    @apply h-16 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-6 z-10 flex-shrink-0;
+  }
+
+  .bottom-nav {
+    @apply md:hidden flex justify-between items-center h-16 bg-slate-900 border-t border-slate-800 px-2 z-20 flex-shrink-0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .page-container {
+    @apply p-4 md:p-8 max-w-7xl mx-auto w-full pb-24 md:pb-8;
+  }
+
+  /* Utilities */
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+

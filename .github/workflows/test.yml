@@ -1,0 +1,42 @@
+name: Web App Automated Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # using LTS
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Web Automated Tests
+        run: npm run test:web
+        env:
+          CI: true
+          FRONTEND_URL: http://localhost:5173/
+          BACKEND_URL: http://localhost:5000/
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+      - name: Upload Test Results Artifact
+        if: always() # Ensures reports are uploaded even if tests fail
+        uses: actions/upload-artifact@v4
+        with:
+          name: automated-test-reports
+          path: reports/
+          retention-days: 14

@@ -1,0 +1,22 @@
+describe('Functional Testing', function() {
+    it('TC_CRUD_001: Create new record with valid data', async function() {});
+    it('TC_CRUD_002: Create new record with missing required fields', async function() {});
+    it('TC_CRUD_003: Read existing record details', async function() {});
+    it('TC_CRUD_004: Read record list pagination', async function() {});
+    it('TC_CRUD_005: Update record with valid data', async function() {});
+    it('TC_CRUD_006: Update record with invalid data', async function() {});
+    it('TC_CRUD_007: Delete existing record', async function() {});
+    it('TC_CRUD_008: Cancel delete operation', async function() {});
+    it('TC_CRUD_009: Confirmation dialogs on delete', async function() {});
+    it('TC_CRUD_010: Data persistence validation after refresh', async function() {});
+    it('TC_CRUD_011: Create record with duplicate unique key', async function() {});
+    it('TC_CRUD_012: Read operation on non-existent record', async function() {});
+    it('TC_CRUD_013: Bulk delete records', async function() {});
+    it('TC_CRUD_014: Bulk update records', async function() {});
+    it('TC_CRUD_015: File upload during create', async function() {});
+    it('TC_CRUD_016: File download from read view', async function() {});
+    it('TC_CRUD_017: Record state transition', async function() {});
+    it('TC_CRUD_018: Inline editing in list view', async function() {});
+    it('TC_CRUD_019: Sort records by column', async function() {});
+    it('TC_CRUD_020: Filter records by criteria', async function() {});
+});

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PlacementPro</string>
+    <string name="title_activity_main">PlacementPro</string>
+    <string name="package_name">com.placementpro.app</string>
+    <string name="custom_url_scheme">com.placementpro.app</string>
+</resources>

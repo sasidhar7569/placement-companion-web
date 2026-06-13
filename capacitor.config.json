@@ -1,0 +1,8 @@
+{
+  "appId": "com.placementpro.app",
+  "appName": "PlacementPro",
+  "webDir": "dist",
+  "server": {
+    "cleartext": true
+  }
+}
