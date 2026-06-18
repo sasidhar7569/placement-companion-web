@@ -1,108 +1,424 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { BookOpen, Code, Terminal, Brain, Search, Filter } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  BookOpen, Brain, Terminal, MessageCircle, X, ChevronRight, 
+  Flame, TrendingUp, Clock, Bookmark, CheckCircle, Lock,
+  PlayCircle, FileText, Target
+} from 'lucide-react';
 
 const PreparationModule = () => {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('All');
+  // States
+  const [showExploreTopics, setShowExploreTopics] = useState(false);
+  const [showCompleteKit, setShowCompleteKit] = useState(false);
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [topicsData, setTopicsData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const categories = ['All', 'Aptitude', 'Reasoning', 'Verbal', 'Core Subjects'];
+  const [bookmarks, setBookmarks] = useState(() => {
+    return JSON.parse(localStorage.getItem('bookmarks') || '[]');
+  });
+  const [completedTopics, setCompletedTopics] = useState(() => {
+    return JSON.parse(localStorage.getItem('prepCompleted') || '{}');
+  });
+  const [toastMessage, setToastMessage] = useState('');
 
-  const topics = [
-    // Aptitude
-    { id: 1, title: 'Time & Work, Pipes & Cisterns', category: 'Aptitude', progress: 80, concepts: 12, questions: 150, icon: BookOpen, color: '#3b82f6' },
-    { id: 2, title: 'Percentages, Profit & Loss', category: 'Aptitude', progress: 45, concepts: 15, questions: 200, icon: BookOpen, color: '#3b82f6' },
-    { id: 3, title: 'Number Systems & Algebra', category: 'Aptitude', progress: 10, concepts: 22, questions: 350, icon: BookOpen, color: '#3b82f6' },
+  const getCategoryProgress = (categoryId) => {
+    let prefix = '';
+    let total = 0;
+    if (categoryId === 'aptitude') { prefix = 'apt-'; total = 12; }
+    else if (categoryId === 'reasoning') { prefix = 'rsn-'; total = 10; }
+    else if (categoryId === 'verbal') { prefix = 'vrb-'; total = 10; }
+    else if (categoryId === 'core-subjects') { prefix = 'cs-'; total = 10; }
     
-    // Reasoning
-    { id: 4, title: 'Syllogisms & Logical Deductions', category: 'Reasoning', progress: 60, concepts: 8, questions: 120, icon: Brain, color: '#8b5cf6' },
-    { id: 5, title: 'Blood Relations & Direction Sense', category: 'Reasoning', progress: 30, concepts: 6, questions: 90, icon: Brain, color: '#8b5cf6' },
-    { id: 6, title: 'Complex Seating Arrangements', category: 'Reasoning', progress: 0, concepts: 10, questions: 140, icon: Brain, color: '#8b5cf6' },
+    const completedCount = Object.keys(completedTopics).filter(id => id.startsWith(prefix) && completedTopics[id]).length;
+    return Math.round((completedCount / total) * 100) || 0;
+  };
+
+  const toggleComplete = (topic, e) => {
+    e.stopPropagation();
+    const newStatus = !completedTopics[topic.id];
+    const newCompleted = { ...completedTopics, [topic.id]: newStatus };
+    setCompletedTopics(newCompleted);
+    localStorage.setItem('prepCompleted', JSON.stringify(newCompleted));
+    setToastMessage(newStatus ? 'Marked as completed' : 'Marked as incomplete');
+    setTimeout(() => setToastMessage(''), 3000);
+  };
+
+  const toggleBookmark = (topic, e) => {
+    e.stopPropagation();
+    const existing = bookmarks.find(b => b.id === topic.id);
+    let newBookmarks;
+    if (existing) {
+      newBookmarks = bookmarks.filter(b => b.id !== topic.id);
+      setToastMessage('Removed from bookmarks');
+    } else {
+      const newBookmark = {
+        ...topic,
+        category: activeCategory.title,
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      };
+      newBookmarks = [...bookmarks, newBookmark];
+      setToastMessage('Added to bookmarks');
+    }
+    setBookmarks(newBookmarks);
+    localStorage.setItem('bookmarks', JSON.stringify(newBookmarks));
     
-    // Core Subjects
-    { id: 7, title: 'Operating Systems & Concurrency', category: 'Core Subjects', progress: 15, concepts: 28, questions: 400, icon: Terminal, color: '#10b981' },
-    { id: 8, title: 'Database Management Systems (DBMS)', category: 'Core Subjects', progress: 5, concepts: 35, questions: 450, icon: Code, color: '#f59e0b' },
-    { id: 9, title: 'Computer Networks Architecture', category: 'Core Subjects', progress: 0, concepts: 32, questions: 380, icon: Terminal, color: '#10b981' },
-    { id: 10, title: 'Object Oriented Programming (OOP)', category: 'Core Subjects', progress: 50, concepts: 20, questions: 280, icon: Code, color: '#f59e0b' },
-    
-    // Verbal
-    { id: 11, title: 'Advanced Reading Comprehension', category: 'Verbal', progress: 90, concepts: 6, questions: 180, icon: BookOpen, color: '#ec4899' },
-    { id: 12, title: 'Sentence Correction & Core Grammar', category: 'Verbal', progress: 100, concepts: 18, questions: 250, icon: BookOpen, color: '#ec4899' },
+    setTimeout(() => setToastMessage(''), 3000);
+  };
+
+  const categories = [
+    {
+      id: 'aptitude',
+      title: 'Aptitude',
+      description: 'Master quantitative aptitude with a structured learning roadmap.',
+      icon: BookOpen,
+      color: '#3b82f6',
+      progress: getCategoryProgress('aptitude'),
+      time: '40 Hours',
+      jsonFile: '/data/aptitude.json'
+    },
+    {
+      id: 'reasoning',
+      title: 'Logical Reasoning',
+      description: 'Build logical thinking and analytical problem-solving skills.',
+      icon: Brain,
+      color: '#8b5cf6',
+      progress: getCategoryProgress('reasoning'),
+      time: '30 Hours',
+      jsonFile: '/data/reasoning.json'
+    },
+    {
+      id: 'verbal',
+      title: 'Verbal Ability',
+      description: 'Improve communication, grammar, and reading comprehension.',
+      icon: MessageCircle,
+      color: '#ec4899',
+      progress: getCategoryProgress('verbal'),
+      time: '25 Hours',
+      jsonFile: '/data/verbal.json'
+    },
+    {
+      id: 'core-subjects',
+      title: 'Core Subjects',
+      description: 'Revise essential computer science concepts for technical interviews.',
+      icon: Terminal,
+      color: '#10b981',
+      progress: getCategoryProgress('core-subjects'),
+      time: '50 Hours',
+      jsonFile: '/data/core-subjects.json'
+    }
   ];
 
-  const filteredTopics = activeTab === 'All' ? topics : topics.filter(t => t.category === activeTab);
+  const fetchTopics = async (category) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(category.jsonFile);
+      const data = await response.json();
+      setTopicsData(data);
+    } catch (error) {
+      console.error("Error fetching topics:", error);
+      setTopicsData([]);
+    }
+    setIsLoading(false);
+  };
 
-  return (
-    <div className="page-container">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-textMain mb-2">Learning & Preparation</h1>
-        <p className="text-secondary text-lg">Master the core concepts before jumping into mock tests.</p>
-      </div>
+  const handleExplore = (category) => {
+    setActiveCategory(category);
+    fetchTopics(category);
+    setShowExploreTopics(true);
+  };
 
-      <div className="flex flex-col md:flex-row gap-4 mb-8 justify-between">
-        <div className="flex overflow-x-auto hide-scrollbar gap-2 pb-2 md:pb-0">
-          {categories.map(cat => (
-            <button 
-              key={cat}
-              className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors ${
-                activeTab === cat ? 'bg-primary text-white' : 'bg-slate-800/50 border text-textMuted hover:bg-slate-800/80'
-              }`}
-              style={{ background: activeTab === cat ? 'var(--primary-color)' : '' }}
-              onClick={() => setActiveTab(cat)}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <div className="relative">
-            <Search size={18} className="text-secondary absolute left-3 top-1/2 transform -translate-y-1/2" />
-            <input type="text" placeholder="Search topics..." className="form-input pl-10 h-full py-2" />
+  const handleCompleteKit = (category) => {
+    setActiveCategory(category);
+    setShowCompleteKit(true);
+  };
+
+  const closeModal = () => {
+    setShowExploreTopics(false);
+    setShowCompleteKit(false);
+    setTimeout(() => {
+      setActiveCategory(null);
+      setTopicsData([]);
+    }, 300);
+  };
+
+  // Components for Modals
+  const renderExploreTopicsModal = () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl"
+      >
+        <div className="flex justify-between items-center p-6 border-b border-slate-800" style={{ borderBottomColor: `${activeCategory.color}40` }}>
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl" style={{ backgroundColor: `${activeCategory.color}20`, color: activeCategory.color }}>
+              <activeCategory.icon size={28} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white">{activeCategory.title} Topics</h2>
+              <p className="text-slate-400 text-sm">Select a topic to start learning</p>
+            </div>
           </div>
-          <button className="btn-outline px-3 py-2"><Filter size={18} /></button>
+          <button onClick={closeModal} className="p-2 hover:bg-slate-800 rounded-full transition-colors text-slate-400 hover:text-white">
+            <X size={24} />
+          </button>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTopics.map(topic => {
-          const Icon = topic.icon;
-          return (
-            <div 
-              key={topic.id} 
-              className="card hover:shadow-md transition-shadow cursor-pointer border-t-4" 
-              style={{ borderTopColor: topic.color }}
-              onClick={() => navigate(`/topic/${topic.id}`)}
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-3 rounded-xl" style={{ background: `${topic.color}15`, color: topic.color }}>
-                  <Icon size={24} />
-                </div>
-                <span className="text-xs font-semibold px-2 py-1 bg-slate-700 rounded text-secondary">{topic.category}</span>
-              </div>
-              <h3 className="font-bold text-lg mb-2">{topic.title}</h3>
-              <div className="flex gap-4 text-sm text-secondary mb-4">
-                <span className="flex items-center gap-1"><BookOpen size={14} /> {topic.concepts} Concepts</span>
-                <span className="flex items-center gap-1"><CheckCircle size={14} /> {topic.questions} Questions</span>
-              </div>
-              <div>
-                <div className="flex justify-between text-xs font-semibold mb-1">
-                  <span>Progress</span>
-                  <span style={{ color: topic.color }}>{topic.progress}%</span>
-                </div>
-                <div className="w-full bg-slate-700 h-2 rounded-full">
-                  <div className="h-2 rounded-full transition-all" style={{ width: `${topic.progress}%`, background: topic.color }}></div>
+        <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
+          {isLoading ? (
+            <div className="flex justify-center items-center h-40">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {topicsData.map((topic, index) => (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  key={topic.id} 
+                  className="bg-slate-800/50 border border-slate-700 hover:border-slate-500 rounded-xl p-5 transition-all hover:shadow-lg group cursor-pointer"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors">{topic.title}</h3>
+                    <div className="flex gap-2">
+                      <button onClick={(e) => toggleComplete(topic, e)} className="focus:outline-none" title="Mark as Complete">
+                        <CheckCircle size={18} className={completedTopics[topic.id] ? "text-green-500 fill-green-500/20" : "text-slate-500 hover:text-green-400 transition-colors"} />
+                      </button>
+                      <button onClick={(e) => toggleBookmark(topic, e)} className="focus:outline-none" title="Bookmark">
+                        <Bookmark size={18} className={bookmarks.find(b => b.id === topic.id) ? "text-primary fill-primary" : "text-slate-500 hover:text-white transition-colors"} />
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-400 mb-4 line-clamp-2 min-h-[40px]">{topic.description}</p>
+                  
+                  <div className="flex items-center justify-between mt-auto">
+                    <div className="flex gap-3 text-xs font-medium">
+                      <span className={`px-2 py-1 rounded-md flex items-center gap-1
+                        ${topic.importance === 'High' ? 'bg-red-500/10 text-red-400' : 
+                          topic.importance === 'Medium' ? 'bg-yellow-500/10 text-yellow-400' : 
+                          'bg-green-500/10 text-green-400'}`}>
+                        <Target size={12} /> {topic.importance}
+                      </span>
+                      <span className="px-2 py-1 bg-slate-700/50 text-slate-300 rounded-md flex items-center gap-1">
+                        <Clock size={12} /> {topic.time}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+
+  const renderCompleteKitModal = () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl"
+      >
+        <div className="flex justify-between items-center p-6 border-b border-slate-800" style={{ borderBottomColor: `${activeCategory.color}40` }}>
+          <div>
+            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+              <span className="p-2 rounded-lg" style={{ backgroundColor: `${activeCategory.color}20`, color: activeCategory.color }}>
+                <activeCategory.icon size={24} />
+              </span>
+              {activeCategory.title} Complete Kit
+            </h2>
+          </div>
+          <button onClick={closeModal} className="p-2 hover:bg-slate-800 rounded-full transition-colors text-slate-400 hover:text-white">
+            <X size={24} />
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Left Column: Roadmap & Plan */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-slate-800/40 rounded-xl p-6 border border-slate-700">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <Target className="text-blue-400" size={20} /> Recommended Roadmap
+                </h3>
+                <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-600 before:to-transparent">
+                  {[1, 2, 3, 4].map((step) => (
+                    <div key={step} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-slate-900 bg-slate-700 text-slate-400 group-[.is-active]:bg-blue-500 group-[.is-active]:text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                        {step}
+                      </div>
+                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-slate-700 bg-slate-800/80 shadow">
+                        <h4 className="font-bold text-white">Phase {step}: Fundamentals</h4>
+                        <p className="text-sm text-slate-400 mt-1">Complete basics and core theory. Solve 50+ basic problems.</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-          );
-        })}
+
+            {/* Right Column: Resources */}
+            <div className="space-y-6">
+              <div className="bg-gradient-to-br from-slate-800 to-slate-800/50 rounded-xl p-6 border border-slate-700 shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <activeCategory.icon size={100} />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-4 relative z-10">Premium Resources</h3>
+                <div className="space-y-3 relative z-10">
+                  <button className="w-full flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-slate-700 hover:border-blue-500/50 hover:bg-slate-900 transition-all group">
+                    <span className="flex items-center gap-3 text-slate-300 group-hover:text-white">
+                      <FileText className="text-blue-400" size={18} /> Formula Cheat Sheet
+                    </span>
+                    <ChevronRight size={16} className="text-slate-500" />
+                  </button>
+                  <button className="w-full flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-slate-700 hover:border-purple-500/50 hover:bg-slate-900 transition-all group">
+                    <span className="flex items-center gap-3 text-slate-300 group-hover:text-white">
+                      <PlayCircle className="text-purple-400" size={18} /> Shortcut Tricks Video
+                    </span>
+                    <ChevronRight size={16} className="text-slate-500" />
+                  </button>
+                  <button className="w-full flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-slate-700 hover:border-green-500/50 hover:bg-slate-900 transition-all group">
+                    <span className="flex items-center gap-3 text-slate-300 group-hover:text-white">
+                      <Target className="text-green-400" size={18} /> 30-Day Study Plan
+                    </span>
+                    <ChevronRight size={16} className="text-slate-500" />
+                  </button>
+                  <button className="w-full flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-slate-700 hover:border-orange-500/50 hover:bg-slate-900 transition-all group opacity-75">
+                    <span className="flex items-center gap-3 text-slate-400">
+                      <Lock className="text-slate-500" size={18} /> Company Patterns
+                    </span>
+                    <span className="text-xs bg-slate-800 px-2 py-1 rounded text-slate-400">Pro</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-slate-800/40 rounded-xl p-6 border border-slate-700">
+                <h3 className="text-lg font-bold text-white mb-2">Daily Checklist</h3>
+                <p className="text-sm text-slate-400 mb-4">Complete these tasks today to maintain your streak.</p>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3 p-3 rounded-lg bg-slate-900/50 border border-slate-700 cursor-pointer hover:bg-slate-800 transition-colors">
+                    <input type="checkbox" className="w-4 h-4 rounded border-slate-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900 bg-slate-800" />
+                    <span className="text-sm font-medium text-slate-300">Read 1 Concept Guide</span>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 rounded-lg bg-slate-900/50 border border-slate-700 cursor-pointer hover:bg-slate-800 transition-colors">
+                    <input type="checkbox" className="w-4 h-4 rounded border-slate-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900 bg-slate-800" />
+                    <span className="text-sm font-medium text-slate-300">Revise Formula Sheet</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+
+  return (
+    <div className="page-container min-h-screen pb-12" style={{ backgroundColor: 'var(--background-color)' }}>
+
+
+      {/* Main Categories Grid */}
+      <div className="mb-6 flex justify-between items-end">
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-1">Preparation Modules</h2>
+          <p className="text-slate-400">Select a category to view the roadmap and topics.</p>
+        </div>
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {categories.map((category, index) => (
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            key={category.id}
+            className="group relative bg-slate-800/40 backdrop-blur-sm rounded-2xl p-6 border border-slate-700 hover:border-slate-500 transition-all duration-300 flex flex-col h-full overflow-hidden"
+          >
+            {/* Soft Glow Background on Hover */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500" 
+                 style={{ background: `radial-gradient(circle at top right, ${category.color}, transparent 70%)` }}></div>
+            
+            <div className="relative z-10 flex flex-col h-full">
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-4 rounded-2xl shadow-inner" style={{ backgroundColor: `${category.color}15`, color: category.color }}>
+                  <category.icon size={32} />
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-semibold text-slate-300 flex items-center gap-1 justify-end">
+                    <Clock size={14} /> Est. {category.time}
+                  </div>
+                </div>
+              </div>
+              
+              <h3 className="text-2xl font-bold text-white mb-2 transition-colors duration-300"
+                  style={{ color: 'white' }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = category.color}
+                  onMouseLeave={(e) => e.currentTarget.style.color = 'white'}>
+                {category.title}
+              </h3>
+              <p className="text-slate-400 mb-6 flex-1">{category.description}</p>
+              
+              {/* Progress Bar */}
+              <div className="mb-6">
+                <div className="flex justify-between text-xs font-semibold mb-2">
+                  <span className="text-slate-300">Completion</span>
+                  <span style={{ color: category.color }}>{category.progress}%</span>
+                </div>
+                <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-700">
+                  <div className="h-full rounded-full transition-all duration-1000 ease-out" 
+                       style={{ width: `${category.progress}%`, backgroundColor: category.color }}></div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 mt-auto">
+                <button 
+                  onClick={() => handleExplore(category)}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors text-sm border border-slate-600"
+                >
+                  Explore Topics
+                </button>
+                <button 
+                  onClick={() => handleCompleteKit(category)}
+                  className="flex-1 py-2.5 px-4 rounded-xl text-white font-semibold transition-all shadow-lg text-sm border border-transparent hover:brightness-110"
+                  style={{ backgroundColor: category.color, boxShadow: `0 4px 14px 0 ${category.color}40` }}
+                >
+                  Complete Kit
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Modals */}
+      <AnimatePresence>
+        {showExploreTopics && activeCategory && renderExploreTopicsModal()}
+        {showCompleteKit && activeCategory && renderCompleteKitModal()}
+      </AnimatePresence>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-6 right-6 bg-slate-800 border border-slate-700 text-white px-6 py-3 rounded-xl shadow-2xl z-50 flex items-center gap-3"
+          >
+            <CheckCircle className="text-green-500" size={20} />
+            {toastMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
-
-// Simple mock icons to prevent missing imports
-const PlayCircle = ({size}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>;
-const CheckCircle = ({size}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
 
 export default PreparationModule;
