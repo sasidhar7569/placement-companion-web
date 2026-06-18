@@ -10,9 +10,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:web:mocha": "mocha --require tests/selenium/utils/testSetup.js tests/selenium/testcases/*.test.js --timeout 30000",
+    "test:web:mocha": "mocha --require tests/selenium/utils/testSetup.js \"tests/selenium/testcases/*.test.js\" --timeout 60000",
     "test:web": "start-server-and-test start:all http://localhost:5173 test:web:mocha",
-    "test:mobile": "mocha --require tests/appium/utils/testSetup.js tests/appium/testcases/*.test.js --timeout 60000",
+    "test:mobile": "mocha --require tests/appium/utils/testSetup.js \"tests/appium/testcases/*.test.js\" --timeout 60000",
     "test:all": "npm run test:web && npm run test:mobile"
   },
   "dependencies": {

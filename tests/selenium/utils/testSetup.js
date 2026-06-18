@@ -32,9 +32,13 @@ exports.mochaHooks = {
         let screenshotPath = '';
 
         if (testStatus === 'FAIL' && driver) {
-            const BasePage = require('../pages/BasePage');
-            const page = new BasePage(driver);
-            screenshotPath = await page.takeScreenshot(this.currentTest.title);
+            try {
+                const BasePage = require('../pages/BasePage');
+                const page = new BasePage(driver);
+                screenshotPath = await page.takeScreenshot(this.currentTest.title);
+            } catch (err) {
+                console.error("Failed to take screenshot:", err.message);
+            }
         }
 
         // Simulate realistic test duration between 1 and 5 minutes in milliseconds
