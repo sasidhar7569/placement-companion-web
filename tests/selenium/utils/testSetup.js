@@ -21,8 +21,15 @@ exports.mochaHooks = {
             options.addArguments('--headless');
             options.addArguments('--no-sandbox');
             options.addArguments('--disable-dev-shm-usage');
+            options.addArguments('--disable-gpu');
+            options.addArguments('--window-size=1920,1080');
         }
-        driver = await new Builder().forBrowser(config.web.browser).setChromeOptions(options).build();
+        try {
+            driver = await new Builder().forBrowser(config.web.browser).setChromeOptions(options).build();
+        } catch (err) {
+            logger.error(`Failed to start Chrome Driver: ${err.message}`);
+            throw err;
+        }
         global.driver = driver;
         global.report = report;
     },
