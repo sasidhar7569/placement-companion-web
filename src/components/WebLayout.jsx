@@ -17,7 +17,6 @@ const WebLayout = () => {
     { path: '/preparation', icon: BookOpen, label: 'Preparation' },
     { path: '/coding', icon: Code, label: 'Topics Preparation' },
     { path: '/companies', icon: Briefcase, label: 'Company Prep' },
-    { path: '/roadmap', icon: Briefcase, label: 'Roadmaps' },
     { path: '/bookmarks', icon: Bookmark, label: 'Bookmarks' },
     { path: '/career-tools', icon: Briefcase, label: 'Career Tools' },
     { path: '/evergreen-jobs', icon: Target, label: 'Evergreen Jobs' }
@@ -96,7 +95,6 @@ const WebLayout = () => {
     if (path.includes('/preparation')) return 'Preparation';
     if (path.includes('/coding')) return 'Topics Preparation';
     if (path.includes('/companies')) return 'Company Prep';
-    if (path.includes('/roadmap')) return 'Roadmaps';
     if (path.includes('/career-tools')) return 'Career Tools';
     if (path.includes('/evergreen-jobs')) return 'Evergreen Jobs';
     if (path.includes('/profile')) return 'Profile';

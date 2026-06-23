@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, CheckCircle, Clock, BookOpen, PenTool, TrendingUp, PlayCircle, Plus, X, Building } from 'lucide-react';
 import { companiesData } from './CodingDashboard';
+import { API_BASE_URL, syncFetch } from '../assets/api';
+import { connectSocket, subscribeToEvent } from '../services/socket';
 
 const HomeDashboard = () => {
   const navigate = useNavigate();
@@ -17,15 +19,14 @@ const HomeDashboard = () => {
   const [newEventTitle, setNewEventTitle] = useState('');
 
   const [targetCompanies, setTargetCompanies] = useState([]);
-  const [scheduleEvents, setScheduleEvents] = useState(() => JSON.parse(localStorage.getItem('scheduleEvents') || '{}'));
+  const [scheduleEvents, setScheduleEvents] = useState({});
+  const [updateTrigger, setUpdateTrigger] = useState(0);
   
   const dDate = new Date();
   const daysArr = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const todayName = daysArr[dDate.getDay()];
 
   const getInitialTasks = () => {
-    const savedTasks = localStorage.getItem(`dailyTasks_${todayName}`);
-    if (savedTasks) return JSON.parse(savedTasks);
     return isNewUser 
       ? [
           { id: 1, title: 'Set up your Profile', type: 'Learning', duration: '5 mins', completed: false, link: '/profile' },
@@ -39,8 +40,8 @@ const HomeDashboard = () => {
 
   const [dailyTasks, setDailyTasks] = useState(getInitialTasks);
 
-  const generateDynamicSchedule = () => {
-    const storedEvents = JSON.parse(localStorage.getItem('scheduleEvents') || '{}');
+  const generateDynamicSchedule = (events = null) => {
+    const storedEvents = events || scheduleEvents || {};
     const dynamicSchedule = [];
     for (let i = 0; i < 7; i++) {
       const d = new Date();
@@ -59,6 +60,132 @@ const HomeDashboard = () => {
 
   const [schedule, setSchedule] = useState(generateDynamicSchedule());
 
+  // 1. Fetch latest data on load to avoid stale data
+  useEffect(() => {
+    const fetchAllData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/sync/all`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await res.json();
+        if (result.success) {
+          const { dailyTasks: backendTasks, scheduleEvents: backendEvents, profile, bookmarks, prepCompleted, codingProgress, targetCompanies: backendTargets } = result.data;
+          
+          if (profile && profile.name) {
+            localStorage.setItem('userName', profile.name);
+            setUserName(profile.name);
+          }
+          if (profile && profile.phone) {
+            localStorage.setItem('phone', profile.phone);
+          }
+          if (profile && profile.profilePic) {
+            localStorage.setItem('profilePic', profile.profilePic);
+          }
+
+          if (backendTasks && backendTasks[todayName]) {
+            setDailyTasks(backendTasks[todayName]);
+          } else {
+            // Fallback to default tasks
+            const defaultTasks = isNewUser 
+              ? [
+                  { id: 1, title: 'Set up your Profile', type: 'Learning', duration: '5 mins', completed: false, link: '/profile' },
+                  { id: 2, title: 'Watch Intro to Placement Prep', type: 'Learning', duration: '15 mins', completed: false, link: '/topic/1' },
+                ]
+              : [
+                  { id: 1, title: `Complete ${todayName} Practice Module`, type: 'Learning', duration: '45 mins', completed: false, link: '/topic/1' },
+                  { id: 2, title: 'Solve 2 Medium Leetcode questions', type: 'Coding', duration: '60 mins', completed: false, link: '/coding' }
+                ];
+            setDailyTasks(defaultTasks);
+          }
+
+          if (backendEvents) {
+            setScheduleEvents(backendEvents);
+            setSchedule(generateDynamicSchedule(backendEvents));
+          }
+
+          if (bookmarks) {
+            localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+          }
+
+          if (prepCompleted) {
+            localStorage.setItem('prepCompleted', JSON.stringify(prepCompleted));
+          }
+
+          if (backendTargets) {
+            localStorage.setItem('targetCompanies', JSON.stringify(backendTargets));
+            setTargetCompanies(backendTargets);
+          }
+
+          if (codingProgress) {
+            localStorage.setItem('codingProgress', JSON.stringify(codingProgress));
+          }
+
+          setUpdateTrigger(p => p + 1);
+        }
+      } catch (err) {
+        console.error('Error fetching sync data:', err);
+      }
+    };
+
+    fetchAllData();
+  }, [todayName, isNewUser]);
+
+  // 2. Initialize Socket.IO connection and register real-time updates
+  useEffect(() => {
+    connectSocket();
+
+    const unsubscribeTask = subscribeToEvent('taskUpdated', (backendTasksObj) => {
+      console.log('Real-time task update:', backendTasksObj);
+      if (backendTasksObj && backendTasksObj[todayName]) {
+        setDailyTasks(backendTasksObj[todayName]);
+      }
+    });
+
+    const unsubscribePlanner = subscribeToEvent('plannerUpdated', (backendPlanner) => {
+      console.log('Real-time planner update:', backendPlanner);
+      if (backendPlanner) {
+        setScheduleEvents(backendPlanner);
+        setSchedule(generateDynamicSchedule(backendPlanner));
+      }
+    });
+
+    const unsubscribeProfile = subscribeToEvent('profileUpdated', (backendProfile) => {
+      console.log('Real-time profile update:', backendProfile);
+      if (backendProfile && backendProfile.name) {
+        localStorage.setItem('userName', backendProfile.name);
+        setUserName(backendProfile.name);
+        setUpdateTrigger(p => p + 1);
+      }
+    });
+
+    const unsubscribeProgress = subscribeToEvent('progressUpdated', (backendProgress) => {
+      console.log('Real-time progress update:', backendProgress);
+      if (backendProgress) {
+        const storedName = localStorage.getItem('userName') || 'John';
+        if (backendProgress.prepCompleted) {
+          localStorage.setItem('prepCompleted', JSON.stringify(backendProgress.prepCompleted));
+        }
+        if (backendProgress.targetCompanies) {
+          localStorage.setItem('targetCompanies', JSON.stringify(backendProgress.targetCompanies));
+          setTargetCompanies(backendProgress.targetCompanies);
+        }
+        if (backendProgress.codingProgress) {
+          localStorage.setItem('codingProgress', JSON.stringify(backendProgress.codingProgress));
+        }
+        setUpdateTrigger(p => p + 1);
+      }
+    });
+
+    return () => {
+      unsubscribeTask();
+      unsubscribePlanner();
+      unsubscribeProfile();
+      unsubscribeProgress();
+    };
+  }, [todayName]);
+
   useEffect(() => {
     const todayEventTitle = scheduleEvents[todayName];
     if (todayEventTitle) {
@@ -67,7 +194,23 @@ const HomeDashboard = () => {
         const hasScheduleTask = tasks.find(t => t.id === 'schedule_task');
         if (!hasScheduleTask) {
           tasks.push({ id: 'schedule_task', title: `${todayEventTitle}`, type: 'Weekly Schedule Task Assigned', duration: 'Custom', completed: false, link: '/home' });
-          localStorage.setItem(`dailyTasks_${todayName}`, JSON.stringify(tasks));
+          const token = localStorage.getItem('token');
+          if (token) {
+            syncFetch(`${API_BASE_URL}/api/sync/all`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            }).then(r => r.json()).then(allData => {
+              const fullTasksObj = (allData.success && allData.data.dailyTasks) ? allData.data.dailyTasks : {};
+              fullTasksObj[todayName] = tasks;
+              syncFetch(`${API_BASE_URL}/api/sync/tasks`, {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ dailyTasks: fullTasksObj })
+              });
+            });
+          }
         }
         return tasks;
       });
@@ -91,13 +234,12 @@ const HomeDashboard = () => {
     // 2. Calculate Coding Score across all companies
     let totalCodingTopics = 0;
     let completedCodingTopics = 0;
-    
+    const codProgress = JSON.parse(localStorage.getItem('codingProgress') || '{}');
     companiesData.forEach(company => {
-      const compProgress = JSON.parse(localStorage.getItem(`codingProgress_${storedName}_${company.name}`) || '{}');
       Object.values(company.topics).forEach(difficultyList => {
         totalCodingTopics += difficultyList.length;
         difficultyList.forEach(t => {
-          if (compProgress[t.id]) completedCodingTopics++;
+          if (codProgress[t.id]) completedCodingTopics++;
         });
       });
     });
@@ -111,28 +253,63 @@ const HomeDashboard = () => {
     
     const overallReadiness = Math.min(100, Math.round((aptScore + codScore) / 2) + taskBonus);
     setReadinessScore(overallReadiness);
-  }, [isNewUser, dailyTasks]);
+  }, [isNewUser, dailyTasks, updateTrigger]);
 
-  const toggleTaskComplete = (taskId) => {
-    setDailyTasks(prev => {
-      const updated = prev.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t);
-      localStorage.setItem(`dailyTasks_${todayName}`, JSON.stringify(updated));
-      return updated;
-    });
+  const toggleTaskComplete = async (taskId) => {
+    const updatedTasks = dailyTasks.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t);
+    setDailyTasks(updatedTasks);
+
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const resAll = await fetch(`${API_BASE_URL}/api/sync/all`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const allData = await resAll.json();
+        const fullTasksObj = (allData.success && allData.data.dailyTasks) ? allData.data.dailyTasks : {};
+        fullTasksObj[todayName] = updatedTasks;
+
+        await syncFetch(`${API_BASE_URL}/api/sync/tasks`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ dailyTasks: fullTasksObj })
+        });
+      } catch (err) {
+        console.error('Error toggling task:', err);
+      }
+    }
   };
 
   const handleTakeTask = (task) => {
     navigate(task.link);
   };
 
-  const handleAddEvent = (e) => {
+  const handleAddEvent = async (e) => {
     e.preventDefault();
     const updatedEvents = { ...scheduleEvents, [newEventDay]: newEventTitle };
     setScheduleEvents(updatedEvents);
-    localStorage.setItem('scheduleEvents', JSON.stringify(updatedEvents));
     setSchedule(prev => prev.map(s => s.day === newEventDay ? { ...s, active: true } : s));
     setShowEventModal(false);
     setNewEventTitle('');
+
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        await syncFetch(`${API_BASE_URL}/api/sync/planner`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ scheduleEvents: updatedEvents })
+        });
+      } catch (err) {
+        console.error('Error adding event:', err);
+      }
+    }
   };
 
   const completedTasksCount = dailyTasks.filter(t => t.completed).length;

@@ -4,7 +4,6 @@ import WebLayout from './components/WebLayout';
 import { API_BASE_URL } from './assets/api';
 
 // Screens
-import SetupWizard from './screens/SetupWizard';
 import HomeDashboard from './screens/HomeDashboard';
 import PreparationModule from './screens/PreparationModule';
 import CodingDashboard from './screens/CodingDashboard';
@@ -14,7 +13,6 @@ import CareerTools from './screens/CareerTools';
 import EvergreenJobs from './screens/EvergreenJobs';
 import UserProfile from './screens/UserProfile';
 import Login from './screens/Login';
-import Roadmap from './screens/Roadmap';
 
 // New Screens
 import TopicDetail from './screens/TopicDetail';
@@ -47,7 +45,6 @@ const App = () => {
       <Routes>
         {/* Onboarding & Login Flow */}
         <Route path="/login" element={<Login />} />
-        <Route path="/setup" element={<SetupWizard />} />
 
         {/* Full Screen / Special Layouts */}
         <Route path="/admin/*" element={<AdminDashboard />} />
@@ -63,7 +60,6 @@ const App = () => {
           <Route path="/coding/editor/:id" element={<CodeEditor />} />
           <Route path="/companies" element={<CompanyBrowser />} />
           <Route path="/company/:id" element={<CompanyDetail />} />
-          <Route path="/roadmap" element={<Roadmap />} />
           <Route path="/career-tools" element={<CareerTools />} />
           <Route path="/career-tools/resume-builder" element={<ResumeBuilderChat />} />
           <Route path="/career-tools/ats-checker" element={<ATSChecker />} />

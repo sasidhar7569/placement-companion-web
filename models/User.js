@@ -41,7 +41,47 @@ const userSchema = new mongoose.Schema({
   skills: {
     type: [String],
     default: []
-  }
+  },
+
+  targetCompanies: {
+    type: [String],
+    default: []
+  },
+
+  bookmarks: [{
+    type: { type: String },
+    itemId: String,
+    title: String,
+    createdAt: { type: Date, default: Date.now }
+  }],
+
+  dailyTasks: [{
+    taskId: String,
+    title: String,
+    completed: { type: Boolean, default: false },
+    completedAt: Date
+  }],
+
+  prepProgress: [{
+    category: String,
+    topic: String,
+    completed: { type: Boolean, default: false },
+    completedAt: Date
+  }],
+
+  codingProgress: [{
+    category: String,
+    topic: String,
+    completed: { type: Boolean, default: false },
+    completedAt: Date
+  }],
+
+  scheduleEvents: [{
+    title: String,
+    startDate: Date,
+    endDate: Date,
+    status: String
+  }]
 }, {
   timestamps: true
 });

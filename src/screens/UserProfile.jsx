@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, Settings, Shield, Building, LogOut, Edit3, Bell, X } from 'lucide-react';
-import { API_BASE_URL } from '../assets/api';
+import { API_BASE_URL, syncFetch } from '../assets/api';
+import { connectSocket, subscribeToEvent } from '../services/socket';
 
 const UserProfile = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('personal');
   const [profilePic, setProfilePic] = useState('');
   const fileInputRef = useRef(null);
@@ -53,6 +56,12 @@ const UserProfile = () => {
   const [selectedCompanies, setSelectedCompanies] = useState([]);
   const [showCompanyPicker, setShowCompanyPicker] = useState(false);
 
+  // Academic Details States
+  const [college, setCollege] = useState(() => localStorage.getItem('college') || '');
+  const [department, setDepartment] = useState(() => localStorage.getItem('department') || '');
+  const [year, setYear] = useState(() => Number(localStorage.getItem('year') || '2025'));
+  const [cgpa, setCgpa] = useState(() => Number(localStorage.getItem('cgpa') || '0.0'));
+
   const availableCompanies = [
     'Google', 'Microsoft', 'Amazon', 'Meta', 'Apple', 
     'TCS', 'Infosys', 'Wipro', 'Cognizant', 'Accenture',
@@ -60,22 +69,144 @@ const UserProfile = () => {
   ];
 
   useEffect(() => {
-    const savedPic = localStorage.getItem('profilePic');
-    if (savedPic) setProfilePic(savedPic);
+    connectSocket();
 
+    const fetchProfileData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        // Fallback to local storage if no token
+        const savedPic = localStorage.getItem('profilePic');
+        if (savedPic) setProfilePic(savedPic);
+        setIsLightMode(localStorage.getItem('theme') === 'light');
+        const savedCompanies = localStorage.getItem('targetCompanies');
+        if (savedCompanies) {
+          try {
+            setSelectedCompanies(JSON.parse(savedCompanies));
+          } catch (e) {}
+        }
+        return;
+      }
+      try {
+        const res = await syncFetch(`${API_BASE_URL}/api/sync/all`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await res.json();
+        if (result.success && result.data.profile) {
+          const profile = result.data.profile;
+          const parts = (profile.name || '').trim().split(' ');
+          const first = parts[0] || '';
+          const last = parts.slice(1).join(' ') || '';
+          
+          setFirstName(first);
+          setLastName(last);
+          setTempFirstName(first);
+          setTempLastName(last);
+          
+          setEmail(profile.email || '');
+          setTempEmail(profile.email || '');
+          
+          setPhone(profile.phone || '');
+          setTempPhone(profile.phone || '');
+          
+          setProfilePic(profile.profilePic || '');
+          setCollege(profile.college || '');
+          setDepartment(profile.department || '');
+          setYear(profile.year || 2025);
+          setCgpa(profile.cgpa || 0.0);
+          
+          localStorage.setItem('firstName', first);
+          localStorage.setItem('lastName', last);
+          localStorage.setItem('email', profile.email || '');
+          localStorage.setItem('phone', profile.phone || '');
+          localStorage.setItem('profilePic', profile.profilePic || '');
+          localStorage.setItem('college', profile.college || '');
+          localStorage.setItem('department', profile.department || '');
+          localStorage.setItem('year', String(profile.year || 2025));
+          localStorage.setItem('cgpa', String(profile.cgpa || 0.0));
+          
+          if (result.data.targetCompanies) {
+            setSelectedCompanies(result.data.targetCompanies);
+            localStorage.setItem('targetCompanies', JSON.stringify(result.data.targetCompanies));
+            window.dispatchEvent(new Event('targetCompaniesUpdated'));
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching profile sync data:', err);
+      }
+    };
+    fetchProfileData();
 
-    
+    const unsubscribeProfile = subscribeToEvent('profileUpdated', (backendProfile) => {
+      console.log('Real-time profile updated:', backendProfile);
+      if (backendProfile) {
+        const parts = (backendProfile.name || '').trim().split(' ');
+        const first = parts[0] || '';
+        const last = parts.slice(1).join(' ') || '';
+        
+        setFirstName(first);
+        setLastName(last);
+        setTempFirstName(first);
+        setTempLastName(last);
+        
+        setEmail(backendProfile.email || '');
+        setTempEmail(backendProfile.email || '');
+        
+        setPhone(backendProfile.phone || '');
+        setTempPhone(backendProfile.phone || '');
+        
+        setProfilePic(backendProfile.profilePic || '');
+        setCollege(backendProfile.college || '');
+        setDepartment(backendProfile.department || '');
+        setYear(backendProfile.year || 2025);
+        setCgpa(backendProfile.cgpa || 0.0);
+
+        localStorage.setItem('firstName', first);
+        localStorage.setItem('lastName', last);
+        localStorage.setItem('email', backendProfile.email || '');
+        localStorage.setItem('phone', backendProfile.phone || '');
+        localStorage.setItem('profilePic', backendProfile.profilePic || '');
+        localStorage.setItem('college', backendProfile.college || '');
+        localStorage.setItem('department', backendProfile.department || '');
+        localStorage.setItem('year', String(backendProfile.year || 2025));
+        localStorage.setItem('cgpa', String(backendProfile.cgpa || 0.0));
+        window.dispatchEvent(new Event('profilePicUpdated'));
+      }
+    });
+
+    const unsubscribeProgress = subscribeToEvent('progressUpdated', (backendProgress) => {
+      console.log('Real-time progress updated in profile:', backendProgress);
+      if (backendProgress && backendProgress.targetCompanies) {
+        setSelectedCompanies(backendProgress.targetCompanies);
+        localStorage.setItem('targetCompanies', JSON.stringify(backendProgress.targetCompanies));
+        window.dispatchEvent(new Event('targetCompaniesUpdated'));
+      }
+    });
+
     setIsLightMode(localStorage.getItem('theme') === 'light');
 
-    const savedCompanies = localStorage.getItem('targetCompanies');
-    if (savedCompanies) {
+    return () => {
+      unsubscribeProfile();
+      unsubscribeProgress();
+    };
+  }, []);
+
+  const saveTargetCompanies = async (companies) => {
+    const token = localStorage.getItem('token');
+    if (token) {
       try {
-        setSelectedCompanies(JSON.parse(savedCompanies));
-      } catch (e) {
-        // Handle invalid JSON
+        await syncFetch(`${API_BASE_URL}/api/sync/progress`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ targetCompanies: companies })
+        });
+      } catch (err) {
+        console.error('Error saving target companies:', err);
       }
     }
-  }, []);
+  };
 
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
@@ -87,57 +218,62 @@ const UserProfile = () => {
         localStorage.setItem('profilePic', base64String);
         window.dispatchEvent(new Event('profilePicUpdated'));
         
-        try {
-          const u = JSON.parse(localStorage.getItem('user'));
-          if (u && u._id) {
-            await fetch(`${API_BASE_URL}/users/${u._id}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
+        const token = localStorage.getItem('token');
+        if (token) {
+          try {
+            await syncFetch(`${API_BASE_URL}/api/sync/profile`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
               body: JSON.stringify({ profilePic: base64String })
             });
+          } catch(err) {
+            console.error("Failed to sync profile pic", err);
           }
-        } catch(err) {
-          console.error("Failed to sync profile pic", err);
         }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handlePersonalSave = () => {
+  const handlePersonalSave = async () => {
     if (tempEmail !== email || tempPhone !== phone) {
       setShowOtpModal(true);
     } else {
-      // Just save other details like Name
       setFirstName(tempFirstName);
       setLastName(tempLastName);
       localStorage.setItem('firstName', tempFirstName);
       localStorage.setItem('lastName', tempLastName);
       window.dispatchEvent(new Event('profilePicUpdated'));
       
-      const u = JSON.parse(localStorage.getItem('user'));
-      if (u && u._id) {
+      const token = localStorage.getItem('token');
+      if (token) {
         setIsSaving(true);
-        fetch(`${API_BASE_URL}/users/${u._id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: `${tempFirstName} ${tempLastName}`.trim() })
-        }).then(() => {
+        try {
+          await syncFetch(`${API_BASE_URL}/api/sync/profile`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ name: `${tempFirstName} ${tempLastName}`.trim() })
+          });
           alert('Profile updated successfully!');
-        }).catch(err => {
+        } catch (err) {
           console.error(err);
           alert('Profile updated locally, but failed to sync.');
-        }).finally(() => {
+        } finally {
           setIsSaving(false);
-        });
+        }
       } else {
         alert('Profile updated successfully!');
       }
     }
   };
 
-  const handleOtpVerify = () => {
-    // Mock OTP verification - any 4 digit code works
+  const handleOtpVerify = async () => {
     if (otp.join('').length === 4) {
       setFirstName(tempFirstName);
       setLastName(tempLastName);
@@ -150,29 +286,32 @@ const UserProfile = () => {
       localStorage.setItem('phone', tempPhone);
       window.dispatchEvent(new Event('profilePicUpdated'));
 
-      const u = JSON.parse(localStorage.getItem('user'));
-      if (u && u._id) {
+      const token = localStorage.getItem('token');
+      if (token) {
         setIsVerifying(true);
-        fetch(`${API_BASE_URL}/users/${u._id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: `${tempFirstName} ${tempLastName}`.trim(),
-            email: tempEmail,
-            phone: tempPhone
-          })
-        }).then(() => {
+        try {
+          await syncFetch(`${API_BASE_URL}/api/sync/profile`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              name: `${tempFirstName} ${tempLastName}`.trim(),
+              phone: tempPhone
+            })
+          });
           setShowOtpModal(false);
           setOtp(['', '', '', '']);
           alert('Profile details updated successfully!');
-        }).catch(err => {
+        } catch (err) {
           console.error(err);
           setShowOtpModal(false);
           setOtp(['', '', '', '']);
           alert('Profile updated locally, but failed to sync.');
-        }).finally(() => {
+        } finally {
           setIsVerifying(false);
-        });
+        }
       } else {
         setShowOtpModal(false);
         setOtp(['', '', '', '']);
@@ -180,6 +319,33 @@ const UserProfile = () => {
       }
     } else {
       alert('Please enter a 4-digit OTP.');
+    }
+  };
+
+  const handleAcademicSave = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        await syncFetch(`${API_BASE_URL}/api/sync/profile`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            college,
+            department,
+            year: Number(year),
+            cgpa: Number(cgpa)
+          })
+        });
+        alert('Academic details updated successfully!');
+      } catch (err) {
+        console.error('Failed to sync academic info:', err);
+        alert('Academic details updated locally, but failed to sync.');
+      }
+    } else {
+      alert('Academic details updated locally!');
     }
   };
 
@@ -253,7 +419,13 @@ const UserProfile = () => {
             >
               <Settings size={18} /> App Settings
             </button>
-            <button className="flex items-center gap-3 w-full p-3 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors">
+            <button 
+              onClick={() => {
+                localStorage.clear();
+                navigate('/login');
+              }}
+              className="flex items-center gap-3 w-full p-3 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+            >
               <LogOut size={18} /> Logout
             </button>
           </div>
@@ -324,7 +496,7 @@ const UserProfile = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="form-group md:col-span-2">
                     <label className="form-label">University / College</label>
-                    <input type="text" className="form-input" defaultValue="National Institute of Technology" />
+                    <input type="text" className="form-input" value={college} onChange={(e) => setCollege(e.target.value)} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Degree</label>
@@ -336,19 +508,19 @@ const UserProfile = () => {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Branch</label>
-                    <input type="text" className="form-input" defaultValue="Computer Science" />
+                    <input type="text" className="form-input" value={department} onChange={(e) => setDepartment(e.target.value)} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Graduation Year</label>
-                    <input type="number" className="form-input" defaultValue="2025" />
+                    <input type="number" className="form-input" value={year} onChange={(e) => setYear(Number(e.target.value))} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Current CGPA</label>
-                    <input type="number" step="0.01" className="form-input" defaultValue="8.75" />
+                    <input type="number" step="0.01" className="form-input" value={cgpa} onChange={(e) => setCgpa(Number(e.target.value))} />
                   </div>
                 </div>
                 <div className="mt-6 flex justify-end">
-                  <button className="btn-primary">Save Changes</button>
+                  <button className="btn-primary" onClick={handleAcademicSave}>Save Changes</button>
                 </div>
               </div>
             )}
@@ -369,6 +541,7 @@ const UserProfile = () => {
                           setSelectedCompanies(newSelected);
                           localStorage.setItem('targetCompanies', JSON.stringify(newSelected));
                           window.dispatchEvent(new Event('targetCompaniesUpdated'));
+                          saveTargetCompanies(newSelected);
                         }}
                         className="ml-2 hover:text-red-300"
                       >
@@ -413,6 +586,7 @@ const UserProfile = () => {
                               localStorage.setItem('targetCompanies', JSON.stringify(newSelected));
                               // Dispatch event so other components can react if needed
                               window.dispatchEvent(new Event('targetCompaniesUpdated'));
+                              saveTargetCompanies(newSelected);
                             }}
                             className={`px-4 py-2 rounded-full border transition-all flex items-center gap-2 ${
                               isSelected 

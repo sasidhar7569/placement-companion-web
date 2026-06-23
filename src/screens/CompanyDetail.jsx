@@ -3,6 +3,102 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Building, Map, ChevronRight, ArrowLeft, Brain, Code, Terminal, Server, Star, Users } from 'lucide-react';
 
 const companiesData = {
+  google: {
+    name: 'Google',
+    logo: 'G',
+    color: '#ef4444',
+    industry: 'Product Based • FAANG',
+    description: 'A global technology leader focused on search, cloud, AI, and advertising.',
+    roles: {
+      'SWE': [
+        { step: 1, title: 'Advanced DSA & Problem Solving', desc: 'Solve medium to hard LeetCode questions focusing on Dynamic Programming, Graphs (DFS/BFS), Trees, and Tries.', icon: Code },
+        { step: 2, title: 'Google-Specific Googlyness', desc: 'Understand Google culture, behavioral standards, and value alignment using the STAR method.', icon: Users },
+        { step: 3, title: 'System Design & Scalability', desc: 'Design large-scale distributed systems, database replication, caching layers, and load balancing.', icon: Server }
+      ],
+      'Cloud Engineer': [
+        { step: 1, title: 'Networking & OS Fundamentals', desc: 'Deep dive into TCP/IP, DNS, Linux systems, virtualization, and containers.', icon: Terminal },
+        { step: 2, title: 'Google Cloud Platform (GCP)', desc: 'Learn core GCP services: Compute Engine, GKE, BigQuery, IAM, and networking.', icon: Server },
+        { step: 3, title: 'Infrastructure as Code & Scripting', desc: 'Master Terraform, Bash/Python scripting, and automated deployment pipelines.', icon: Code }
+      ]
+    }
+  },
+  microsoft: {
+    name: 'Microsoft',
+    logo: 'M',
+    color: '#0ea5e9',
+    industry: 'Product Based • MNC',
+    description: 'Empowering every person and organization on the planet to achieve more.',
+    roles: {
+      'SDE': [
+        { step: 1, title: 'Data Structures & Algorithms', desc: 'Master arrays, linked lists, trees, and backtracking questions from past Microsoft interviews.', icon: Code },
+        { step: 2, title: 'Object-Oriented Design (OOD)', desc: 'Learn SOLID design principles, design patterns, and low-level code structure.', icon: Terminal },
+        { step: 3, title: 'System Design & CS Core', desc: 'Understand operating systems (threading, memory management) and system architecture basics.', icon: Server }
+      ],
+      'PM': [
+        { step: 1, title: 'Product Sense & Strategy', desc: 'Learn how to design products, analyze product metrics, and build feature roadmaps.', icon: Brain },
+        { step: 2, title: 'Analytical & Technical MCQs', desc: 'Understand basic technical architectures and metric tracking concepts.', icon: Server },
+        { step: 3, title: 'Communication & Leadership', desc: 'Excel in stakeholder management, product design questions, and team alignment.', icon: Users }
+      ]
+    }
+  },
+  amazon: {
+    name: 'Amazon',
+    logo: 'A',
+    color: '#f59e0b',
+    industry: 'Product Based • FAANG',
+    description: 'Multinational technology company focusing on e-commerce, cloud computing, and AI.',
+    roles: {
+      'SDE-1': [
+        { step: 1, title: 'Data Structures & Algorithms', desc: 'LeetCode Medium/Hard. Focus on Trees, Graphs, DP, and Sliding Window.', icon: Code },
+        { step: 2, title: 'CS Fundamentals', desc: 'In-depth OS (threads, locks, deadlocks) and Networking protocols.', icon: Server },
+        { step: 3, title: 'Amazon Leadership Principles', desc: 'Prepare STAR method stories for all 16 leadership principles.', icon: Users }
+      ],
+      'SDE-2': [
+        { step: 1, title: 'High-Level System Design (HLD)', desc: 'Design distributed systems, load balancing, caching, and database sharding.', icon: Map },
+        { step: 2, title: 'Low-Level Design (LLD)', desc: 'Design patterns, SOLID principles, and object-oriented design.', icon: Terminal },
+        { step: 3, title: 'Advanced DSA', desc: 'Complex algorithmic optimization and time-complexity limits.', icon: Code },
+        { step: 4, title: 'Deep Dive Leadership', desc: 'Handling conflict, delivering results under pressure, and mentoring.', icon: Users }
+      ]
+    }
+  },
+  meta: {
+    name: 'Meta',
+    logo: 'M',
+    color: '#0668e1',
+    industry: 'Product Based • FAANG',
+    description: 'Building technologies that help people connect, find communities, and grow businesses.',
+    roles: {
+      'Software Engineer': [
+        { step: 1, title: 'High-Speed Coding & DSA', desc: 'Practice solving 2 LeetCode medium questions in 45 minutes perfectly, focusing on arrays, strings, and trees.', icon: Code },
+        { step: 2, title: 'System Design (HLD)', desc: 'Practice scale-out designs, feed generation, messaging architectures, and distributed caching.', icon: Server },
+        { step: 3, title: 'Behavioral & Meta Values', desc: 'Prepare answers showing impact, execution, and meta-focused core values.', icon: Users }
+      ],
+      'Product Manager': [
+        { step: 1, title: 'Product Design & Creativity', desc: 'Answer design prompts like "Design a refrigerator for kids" or new Meta features.', icon: Brain },
+        { step: 2, title: 'Execution & Analytical Metrics', desc: 'Formulate metrics for measuring success, debugging declines, and prioritization.', icon: Terminal },
+        { step: 3, title: 'Leadership & Teamwork', desc: 'Excel in cross-functional collaboration and managing competing engineering priorities.', icon: Users }
+      ]
+    }
+  },
+  apple: {
+    name: 'Apple',
+    logo: 'A',
+    color: '#94a3b8',
+    industry: 'Product Based • FAANG',
+    description: 'A pioneer in personal technology, manufacturing premium hardware, software, and services.',
+    roles: {
+      'ICT': [
+        { step: 1, title: 'Core Algorithms & Complexity', desc: 'Focus on pointers, graph theory, trees, and time/space complexity optimization.', icon: Code },
+        { step: 2, title: 'Memory Management & Low-Level', desc: 'Learn pointers, manual memory allocation, stack vs heap, and low-level debugging.', icon: Terminal },
+        { step: 3, title: 'Embedded Systems Integration', desc: 'Learn system calls, OS concepts, hardware drivers, and compiler basics.', icon: Server }
+      ],
+      'Hardware': [
+        { step: 1, title: 'Circuit Design & Analysis', desc: 'Master basic electrical engineering circuits, filters, transistor level logic, and layout.', icon: Brain },
+        { step: 2, title: 'Computer Architecture Fundamentals', desc: 'Deeply understand ALU, CPU registers, caches, pipelining, and memory bus.', icon: Server },
+        { step: 3, title: 'Signal Integrity & Verification', desc: 'Perform timing analysis, signal noise checks, and validation methodology.', icon: Terminal }
+      ]
+    }
+  },
   tcs: {
     name: 'Tata Consultancy Services',
     logo: 'T',
@@ -43,23 +139,22 @@ const companiesData = {
       ]
     }
   },
-  amazon: {
-    name: 'Amazon',
-    logo: 'A',
-    color: '#f59e0b',
-    industry: 'Product Based • FAANG',
-    description: 'Multinational technology company focusing on e-commerce, cloud computing, and AI.',
+  wipro: {
+    name: 'Wipro',
+    logo: 'W',
+    color: '#9c27b0',
+    industry: 'Service Based • MNC',
+    description: 'A leading technology services and consulting company, driving digital transformation.',
     roles: {
-      'SDE-1': [
-        { step: 1, title: 'Data Structures & Algorithms', desc: 'LeetCode Medium/Hard. Focus on Trees, Graphs, DP, and Sliding Window.', icon: Code },
-        { step: 2, title: 'CS Fundamentals', desc: 'In-depth OS (threads, locks, deadlocks) and Networking protocols.', icon: Server },
-        { step: 3, title: 'Amazon Leadership Principles', desc: 'Prepare STAR method stories for all 16 leadership principles.', icon: Users }
+      'Elite': [
+        { step: 1, title: 'Aptitude & Verbal Skills', desc: 'Solve math reasoning, logical puzzles, and english vocabulary/grammar questions.', icon: Brain },
+        { step: 2, title: 'Basic Coding & Debugging', desc: 'Solve simple array or string manipulation exercises and fix simple code snippets.', icon: Code },
+        { step: 3, title: 'General Technical & HR', desc: 'Be ready for core questions from college projects, basic OOPs, and behavioral answers.', icon: Users }
       ],
-      'SDE-2': [
-        { step: 1, title: 'High-Level System Design (HLD)', desc: 'Design distributed systems, load balancing, caching, and database sharding.', icon: Map },
-        { step: 2, title: 'Low-Level Design (LLD)', desc: 'Design patterns, SOLID principles, and object-oriented design.', icon: Terminal },
-        { step: 3, title: 'Advanced DSA', desc: 'Complex algorithmic optimization and time-complexity limits.', icon: Code },
-        { step: 4, title: 'Deep Dive Leadership', desc: 'Handling conflict, delivering results under pressure, and mentoring.', icon: Users }
+      'Turbo': [
+        { step: 1, title: 'Advanced DSA & Coding', desc: 'Master dynamic programming, searching algorithms, trees, and hash tables.', icon: Code },
+        { step: 2, title: 'DBMS, OS & Networks', desc: 'Brush up on computer fundamentals, SQL keys, schemas, process states, and protocols.', icon: Server },
+        { step: 3, title: 'Technical Interview', desc: 'Explain complex project architectures, live coding tasks, and design considerations.', icon: Terminal }
       ]
     }
   },
@@ -79,6 +174,101 @@ const companiesData = {
         { step: 1, title: 'Skill Based Coding', desc: 'Java/Python specific coding questions requiring language deep knowledge.', icon: Code },
         { step: 2, title: 'DBMS & Query Optimization', desc: 'Writing optimal queries and understanding database relationships.', icon: Server },
         { step: 3, title: 'Technical HR', desc: 'Project discussions, role-playing, and technical scenario questions.', icon: Users }
+      ]
+    }
+  },
+  accenture: {
+    name: 'Accenture',
+    logo: 'A',
+    color: '#a100ff',
+    industry: 'Service Based • MNC',
+    description: 'A leading global professional services company, providing a broad range of services.',
+    roles: {
+      'Associate Software Engineer': [
+        { step: 1, title: 'Cognitive & Technical MCQ', desc: 'Aptitude, analytical, MS Office suite basics, networking, and security concepts.', icon: Brain },
+        { step: 2, title: 'Basic Coding Assessment', desc: 'Solve 2 basic coding questions, mostly on strings, arrays, or loops.', icon: Code },
+        { step: 3, title: 'HR & Communication Round', desc: 'Automated speaking assessment followed by a conversational interview.', icon: Users }
+      ],
+      'Advanced ASE': [
+        { step: 1, title: 'Advanced Coding Assessment', desc: 'Master data structures, graph traversals, greedy choice, and sorting optimization.', icon: Code },
+        { step: 2, title: 'CS Core Concepts & Cloud', desc: 'Deep dive into database normal forms, cloud computing terminology, and OS paging.', icon: Server },
+        { step: 3, title: 'Technical Panel Interview', desc: 'Focuses on final-year projects, complex algorithms, and system architecture.', icon: Terminal }
+      ]
+    }
+  },
+  goldmansachs: {
+    name: 'Goldman Sachs',
+    logo: 'GS',
+    color: '#005a9c',
+    industry: 'Product Based • Finance',
+    description: 'A leading global financial institution that delivers services in investment banking, securities, and investment management.',
+    roles: {
+      'Analyst': [
+        { step: 1, title: 'Quantitative Aptitude & Math MCQ', desc: 'High-level probability, statistics, linear algebra, permutations, and combinations.', icon: Brain },
+        { step: 2, title: 'Coding & DSA Rounds', desc: 'Solve medium to hard DSA problems focusing on arrays, strings, trees, and DP.', icon: Code },
+        { step: 3, title: 'CS Fundamentals & OOPs', desc: 'In-depth questions on garbage collection, heap vs stack, OS scheduling, and DB indexing.', icon: Server }
+      ],
+      'Summer Analyst': [
+        { step: 1, title: 'Math & Logical Assessment', desc: 'Solve analytical puzzles, probability, logic deductions, and basic programming MCQs.', icon: Brain },
+        { step: 2, title: 'Easy-Medium Coding Test', desc: 'Apply array searching, sorting, string tokenization, and recursion.', icon: Code },
+        { step: 3, title: 'Technical Interview', desc: 'Review projects, simple data structures, OOP concepts, and academic details.', icon: Users }
+      ]
+    }
+  },
+  morganstanley: {
+    name: 'Morgan Stanley',
+    logo: 'MS',
+    color: '#003366',
+    industry: 'Product Based • Finance',
+    description: 'A global financial services leader providing investment banking, securities, and wealth management.',
+    roles: {
+      'Technology Analyst': [
+        { step: 1, title: 'Aptitude & Technical MCQ', desc: 'Solve questions on basic computer science, OOPs concepts, Java foundations, and data structures.', icon: Brain },
+        { step: 2, title: 'DSA & Coding Rounds', desc: 'Focus on Linked Lists, Trees, Graph traversals, and dynamic programming.', icon: Code },
+        { step: 3, title: 'CS Core & System Design', desc: 'Study OS concepts, multithreading, garbage collection, and basic high-level system design.', icon: Server }
+      ],
+      'Associate': [
+        { step: 1, title: 'System Design & Architecture', desc: 'Design microservices, API endpoints, caching, message queues, and replication systems.', icon: Map },
+        { step: 2, title: 'Advanced OOP & Design Patterns', desc: 'Master creational, structural, and behavioral design patterns in code.', icon: Terminal },
+        { step: 3, title: 'Technical & Managerial Rounds', desc: 'Demonstrate scalability awareness, handling engineering conflicts, and project delivery.', icon: Users }
+      ]
+    }
+  },
+  jpmorgan: {
+    name: 'JPMorgan',
+    logo: 'J',
+    color: '#16a34a',
+    industry: 'Product Based • Finance',
+    description: 'A premier global financial services firm and one of the largest banking institutions.',
+    roles: {
+      'Analyst': [
+        { step: 1, title: 'Code For Good Hackathon / Coding Test', desc: 'Collaborate to build social impact projects, showing coding, design, and collaboration.', icon: Code },
+        { step: 2, title: 'CS Core Subjects (OOP, DBMS)', desc: 'Understand encapsulation, inheritance, SQL queries, joins, and normal forms.', icon: Server },
+        { step: 3, title: 'Technical & Fit Interviews', desc: 'Walkthrough project details, solve coding problems, and demonstrate value alignment.', icon: Users }
+      ],
+      'Associate': [
+        { step: 1, title: 'System Design & High Concurrency', desc: 'Design transaction-safe banking systems, load balancers, caching, and SQL replication.', icon: Map },
+        { step: 2, title: 'Concurrency & Databases', desc: 'Deep dive database transactions (ACID, isolation levels) and multithreaded execution.', icon: Server },
+        { step: 3, title: 'Managerial & Behavioral', desc: 'Address project execution, leadership, compliance, and handling difficult situations.', icon: Users }
+      ]
+    }
+  },
+  bloomberg: {
+    name: 'Bloomberg',
+    logo: 'B',
+    color: '#ff8c00',
+    industry: 'Product Based • Finance',
+    description: 'The global leader in business and financial data, news, and insights.',
+    roles: {
+      'Software Engineer': [
+        { step: 1, title: 'Phone Screen (DSA & OOP)', desc: 'Solve Leetcode Medium problems on hash tables, stacks, queues, and explain OOP details.', icon: Code },
+        { step: 2, title: 'Onsite Technical Rounds', desc: 'Design data structures on-the-fly, master pointer manipulation, and solve complex algorithms.', icon: Terminal },
+        { step: 3, title: 'System Design & Value Match', desc: 'Design financial ticker systems or distributed pub-sub layers, showing passion for performance.', icon: Server }
+      ],
+      'Data Specialist': [
+        { step: 1, title: 'Financial & Data Concepts MCQ', desc: 'Understand basics of stock markets, data formats, schema structures, and stats.', icon: Brain },
+        { step: 2, title: 'SQL & Python Data Manipulation', desc: 'Retrieve, clean, and analyze complex datasets using SQL queries and Python code.', icon: Code },
+        { step: 3, title: 'Domain Interview', desc: 'Discuss financial terminology, data processing pipelines, and client communication.', icon: Users }
       ]
     }
   }

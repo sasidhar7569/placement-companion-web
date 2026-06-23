@@ -19,8 +19,67 @@ const Resume = require("./models/Resume");
 const Event = require("./models/Event");
 
 const app = express();
+const http = require("http");
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
+  }
+});
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET;
+
+// Socket authentication middleware
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token || socket.handshake.headers.token;
+  if (!token) {
+    return next(new Error("Authentication error: No token provided"));
+  }
+  
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return next(new Error("Authentication error: Invalid token"));
+    }
+    socket.userId = decoded.id;
+    next();
+  });
+});
+
+io.on("connection", (socket) => {
+  console.log(`User connected to socket: ${socket.userId}`);
+  const userRoom = `user:${socket.userId}`;
+  socket.join(userRoom);
+
+  socket.on("disconnect", () => {
+    console.log(`User disconnected: ${socket.userId}`);
+  });
+});
+
+// Helper to emit events to specific user room
+const emitToUser = (userId, event, data) => {
+  const userRoom = `user:${userId}`;
+  io.to(userRoom).emit(event, data);
+};
+
+// HTTP JWT Authentication Middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  
+  if (!token) {
+    return res.status(401).json({ success: false, message: "No token provided" });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).json({ success: false, message: "Invalid token" });
+    }
+    req.userId = decoded.id;
+    next();
+  });
+};
 
 app.use(cors());
 app.use(express.json());
@@ -413,6 +472,9 @@ app.post("/notifications", async (req, res) => {
         const notification = new Notification(req.body);
         await notification.save();
 
+        // Broadcast to all sockets
+        io.emit("notificationUpdated", notification);
+
         res.status(201).json({
             success: true,
             message: "Notification added successfully",
@@ -447,6 +509,9 @@ app.delete("/notifications/:id", async (req, res) => {
                 message: "Notification not found"
             });
         }
+
+        // Broadcast to all sockets
+        io.emit("notificationUpdated", { deletedId: req.params.id });
 
         res.status(200).json({
             success: true,
@@ -823,6 +888,9 @@ app.post("/test-results", async (req, res) => {
 
         await result.save();
 
+        // Emit to user room
+        emitToUser(result.userId, "resultUpdated", result);
+
         res.status(201).json({
             success: true,
             message: "Test result saved successfully",
@@ -873,6 +941,288 @@ app.get("/test-results/:userId", async (req, res) => {
     }
 });
 
-app.listen(5000, "0.0.0.0", () => {
-  console.log("Server running on 5000");
+// Mapping helpers
+const mapBookmarksToClient = (bookmarks) => {
+    return (bookmarks || []).map(b => ({
+        id: b.itemId,
+        title: b.title,
+        category: b.type,
+        date: b.createdAt ? new Date(b.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+        time: '15 mins'
+    }));
+};
+
+const mapDailyTasksToClient = (dailyTasks) => {
+    const dailyTasksMapped = {};
+    (dailyTasks || []).forEach(t => {
+        const parts = t.taskId.split('_');
+        const day = parts[0];
+        const id = parts.slice(1).join('_');
+        if (!dailyTasksMapped[day]) dailyTasksMapped[day] = [];
+        dailyTasksMapped[day].push({
+            id: isNaN(Number(id)) ? id : Number(id),
+            title: t.title,
+            completed: t.completed,
+            type: t.taskId.includes('schedule') ? 'Weekly Schedule Task Assigned' : 'Learning',
+            duration: 'Custom',
+            link: t.taskId.includes('schedule') ? '/home' : (id === '1' ? '/profile' : '/topic/1')
+        });
+    });
+    return dailyTasksMapped;
+};
+
+const mapScheduleEventsToClient = (events) => {
+    const scheduleEventsMapped = {};
+    (events || []).forEach(e => {
+        if (e.status) {
+            scheduleEventsMapped[e.status] = e.title;
+        }
+    });
+    return scheduleEventsMapped;
+};
+
+const mapPrepProgressToClient = (prepProgress) => {
+    const prepCompletedMapped = {};
+    (prepProgress || []).forEach(p => {
+        prepCompletedMapped[p.topic] = p.completed;
+    });
+    return prepCompletedMapped;
+};
+
+const mapCodingProgressToClient = (codingProgress) => {
+    const codingProgressMapped = {};
+    (codingProgress || []).forEach(p => {
+        codingProgressMapped[p.topic] = p.completed;
+    });
+    return codingProgressMapped;
+};
+
+// Real-Time Sync Endpoints
+app.get("/api/sync/all", authenticateToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.userId);
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        res.status(200).json({
+            success: true,
+            data: {
+                profile: {
+                    name: user.name,
+                    email: user.email,
+                    phone: user.phone || "",
+                    profilePic: user.profilePic || "",
+                    college: user.college || "",
+                    department: user.department || "",
+                    year: user.year || 1,
+                    cgpa: user.cgpa || 0,
+                    skills: user.skills || []
+                },
+                targetCompanies: user.targetCompanies || [],
+                bookmarks: mapBookmarksToClient(user.bookmarks),
+                prepCompleted: mapPrepProgressToClient(user.prepProgress),
+                codingProgress: mapCodingProgressToClient(user.codingProgress),
+                dailyTasks: mapDailyTasksToClient(user.dailyTasks),
+                scheduleEvents: mapScheduleEventsToClient(user.scheduleEvents)
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+app.patch("/api/sync/tasks", authenticateToken, async (req, res) => {
+    try {
+        const { dailyTasks } = req.body;
+        const tasksArray = [];
+        if (dailyTasks) {
+            Object.keys(dailyTasks).forEach(day => {
+                if (Array.isArray(dailyTasks[day])) {
+                    dailyTasks[day].forEach(t => {
+                        tasksArray.push({
+                            taskId: `${day}_${t.id}`,
+                            title: t.title,
+                            completed: !!t.completed,
+                            completedAt: t.completed ? new Date() : null
+                        });
+                    });
+                }
+            });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.userId,
+            { $set: { dailyTasks: tasksArray } },
+            { new: true }
+        );
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        const dailyTasksMapped = mapDailyTasksToClient(user.dailyTasks);
+        emitToUser(req.userId, "taskUpdated", dailyTasksMapped);
+
+        res.status(200).json({ success: true, data: dailyTasksMapped });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+app.patch("/api/sync/planner", authenticateToken, async (req, res) => {
+    try {
+        const { scheduleEvents } = req.body;
+        const eventsArray = [];
+        if (scheduleEvents) {
+            Object.keys(scheduleEvents).forEach(day => {
+                if (scheduleEvents[day]) {
+                    eventsArray.push({
+                        title: scheduleEvents[day],
+                        status: day,
+                        startDate: new Date(),
+                        endDate: new Date()
+                    });
+                }
+            });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.userId,
+            { $set: { scheduleEvents: eventsArray } },
+            { new: true }
+        );
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        const scheduleEventsMapped = mapScheduleEventsToClient(user.scheduleEvents);
+        emitToUser(req.userId, "plannerUpdated", scheduleEventsMapped);
+
+        res.status(200).json({ success: true, data: scheduleEventsMapped });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+app.patch("/api/sync/profile", authenticateToken, async (req, res) => {
+    try {
+        const updates = req.body;
+        const allowedFields = ["name", "phone", "profilePic", "college", "department", "year", "cgpa", "skills"];
+        const updateQuery = {};
+        Object.keys(updates).forEach(key => {
+            if (allowedFields.includes(key)) {
+                updateQuery[key] = updates[key];
+            }
+        });
+
+        const user = await User.findByIdAndUpdate(
+            req.userId,
+            { $set: updateQuery },
+            { new: true }
+        );
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        const profileData = {
+            name: user.name,
+            email: user.email,
+            phone: user.phone || "",
+            profilePic: user.profilePic || "",
+            college: user.college || "",
+            department: user.department || "",
+            year: user.year || 1,
+            cgpa: user.cgpa || 0,
+            skills: user.skills || []
+        };
+
+        emitToUser(req.userId, "profileUpdated", profileData);
+
+        res.status(200).json({ success: true, data: profileData });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+app.patch("/api/sync/progress", authenticateToken, async (req, res) => {
+    try {
+        const { prepCompleted, codingProgress, targetCompanies } = req.body;
+        const updateQuery = {};
+        
+        if (prepCompleted !== undefined) {
+            const prepProgressArray = [];
+            Object.keys(prepCompleted).forEach(topicId => {
+                prepProgressArray.push({
+                    category: topicId.startsWith('apt-') ? 'Aptitude' : 'General',
+                    topic: topicId,
+                    completed: !!prepCompleted[topicId],
+                    completedAt: prepCompleted[topicId] ? new Date() : null
+                });
+            });
+            updateQuery.prepProgress = prepProgressArray;
+        }
+        
+        if (codingProgress !== undefined) {
+            const codingProgressArray = [];
+            Object.keys(codingProgress).forEach(topicId => {
+                codingProgressArray.push({
+                    category: 'Coding',
+                    topic: topicId,
+                    completed: !!codingProgress[topicId],
+                    completedAt: codingProgress[topicId] ? new Date() : null
+                });
+            });
+            updateQuery.codingProgress = codingProgressArray;
+        }
+        
+        if (targetCompanies !== undefined) {
+            updateQuery.targetCompanies = targetCompanies;
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.userId,
+            { $set: updateQuery },
+            { new: true }
+        );
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        const progressData = {
+            prepCompleted: mapPrepProgressToClient(user.prepProgress),
+            codingProgress: mapCodingProgressToClient(user.codingProgress),
+            targetCompanies: user.targetCompanies
+        };
+
+        emitToUser(req.userId, "progressUpdated", progressData);
+
+        res.status(200).json({ success: true, data: progressData });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+app.patch("/api/sync/bookmarks", authenticateToken, async (req, res) => {
+    try {
+        const { bookmarks } = req.body;
+        const bookmarksArray = [];
+        if (bookmarks) {
+            bookmarks.forEach(b => {
+                bookmarksArray.push({
+                    type: b.category || 'General',
+                    itemId: b.id,
+                    title: b.title,
+                    createdAt: b.date ? new Date(b.date) : new Date()
+                });
+            });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.userId,
+            { $set: { bookmarks: bookmarksArray } },
+            { new: true }
+        );
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        const bookmarksMapped = mapBookmarksToClient(user.bookmarks);
+        emitToUser(req.userId, "dataUpdated", { bookmarks: bookmarksMapped });
+
+        res.status(200).json({ success: true, data: bookmarksMapped });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+server.listen(5000, "0.0.0.0", () => {
+    console.log("Server running on 5000");
 });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, UserPlus, LogIn } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, LogIn, Settings } from 'lucide-react';
 import { API_BASE_URL } from '../assets/api';
 
 // Temporary flag for testing APK without login
@@ -15,13 +15,7 @@ const Login = () => {
       localStorage.setItem('user', JSON.stringify({ name: 'Test User', email: 'test@example.com' }));
       localStorage.setItem('userName', 'Test User');
       localStorage.setItem('role', 'student');
-      
-      const hasSetup = localStorage.getItem('targetCompanies');
-      if (!hasSetup) {
-        navigate('/setup', { replace: true });
-      } else {
-        navigate('/home', { replace: true });
-      }
+      navigate('/home', { replace: true });
     }
   }, [navigate]);
 
@@ -31,6 +25,25 @@ const Login = () => {
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState('student');
   const [isLoading, setIsLoading] = useState(false);
+  const [showServerSettings, setShowServerSettings] = useState(false);
+  const [serverUrlInput, setServerUrlInput] = useState(API_BASE_URL);
+
+  const handleSaveServerUrl = () => {
+    let url = serverUrlInput.trim();
+    if (!url) {
+      alert('Please enter a valid URL');
+      return;
+    }
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'http://' + url;
+    }
+    if (url.endsWith('/')) {
+      url = url.slice(0, -1);
+    }
+    localStorage.setItem('custom_backend_url', url);
+    alert(`Backend URL updated to: ${url}\nReloading app...`);
+    window.location.reload();
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -98,16 +111,7 @@ const Login = () => {
         if (data.role === 'admin') {
           navigate('/admin');
         } else {
-          const hasSetup = localStorage.getItem('targetCompanies');
-          let parsedSetup = [];
-          if (hasSetup) {
-            try { parsedSetup = JSON.parse(hasSetup); } catch(e) {}
-          }
-          if (!hasSetup || !Array.isArray(parsedSetup) || parsedSetup.length === 0) {
-            navigate('/setup');
-          } else {
-            navigate('/home');
-          }
+          navigate('/home');
         }
       } else {
         alert('Registration successful. Please login now.');
@@ -263,6 +267,56 @@ const Login = () => {
                 Login
               </span>
             </p>
+          )}
+        </div>
+
+        {/* Connection Settings */}
+        <div className="mt-8 pt-6 border-t border-slate-700/50 text-center">
+          <button
+            type="button"
+            onClick={() => setShowServerSettings(!showServerSettings)}
+            className="text-xs text-slate-400 hover:text-white transition-colors inline-flex items-center gap-1.5 focus:outline-none"
+          >
+            <Settings size={14} className="animate-[spin_10s_linear_infinite]" />
+            Connection Settings
+          </button>
+          
+          {showServerSettings && (
+            <div className="mt-4 p-4 rounded-lg bg-slate-900/60 border border-slate-700 text-left">
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Backend Server URL</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={serverUrlInput}
+                  onChange={(e) => setServerUrlInput(e.target.value)}
+                  className="form-input flex-1 text-xs bg-slate-950/80 border border-slate-600 rounded px-2 py-1.5 text-white focus:outline-none focus:border-blue-500"
+                  placeholder="https://placement-companion-backend.onrender.com"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveServerUrl}
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-2">
+                Current API Base: <code className="text-blue-400 font-mono">{API_BASE_URL}</code>
+              </p>
+              <div className="mt-2 flex gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem('custom_backend_url');
+                    alert('Reset to default. Reloading...');
+                    window.location.reload();
+                  }}
+                  className="px-2 py-1 bg-slate-800 hover:bg-red-950 text-slate-300 rounded text-[10px] transition-colors"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>

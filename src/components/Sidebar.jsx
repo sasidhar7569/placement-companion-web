@@ -10,7 +10,6 @@ const Sidebar = () => {
     { path: '/preparation', icon: BookOpen, label: 'Preparation' },
     { path: '/coding', icon: Code, label: 'Topics Preparation' },
     { path: '/companies', icon: Briefcase, label: 'Company Prep' },
-    { path: '/roadmap', icon: Briefcase, label: 'Roadmaps' },
     { path: '/bookmarks', icon: Bookmark, label: 'Bookmarks' },
     { path: '/career-tools', icon: Briefcase, label: 'Career Tools' },
     { path: '/evergreen-jobs', icon: Target, label: 'Evergreen Jobs' }
@@ -54,6 +53,11 @@ const Sidebar = () => {
             localStorage.removeItem('phone');
             localStorage.removeItem('profilePic');
             localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('email');
+            localStorage.removeItem('role');
+            localStorage.removeItem('targetCompanies');
             navigate('/login');
           }}
         >

@@ -5,6 +5,8 @@ import {
   Flame, TrendingUp, Clock, Bookmark, CheckCircle, Lock,
   PlayCircle, FileText, Target
 } from 'lucide-react';
+import { API_BASE_URL, syncFetch } from '../assets/api';
+import { connectSocket, subscribeToEvent } from '../services/socket';
 
 const PreparationModule = () => {
   // States
@@ -14,27 +16,61 @@ const PreparationModule = () => {
   const [topicsData, setTopicsData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [bookmarks, setBookmarks] = useState(() => {
-    return JSON.parse(localStorage.getItem('bookmarks') || '[]');
-  });
-  const [completedTopics, setCompletedTopics] = useState(() => {
-    return JSON.parse(localStorage.getItem('prepCompleted') || '{}');
-  });
+  const [bookmarks, setBookmarks] = useState([]);
+  const [completedTopics, setCompletedTopics] = useState({});
   const [toastMessage, setToastMessage] = useState('');
 
-  const getCategoryProgress = (categoryId) => {
-    let prefix = '';
-    let total = 0;
-    if (categoryId === 'aptitude') { prefix = 'apt-'; total = 12; }
-    else if (categoryId === 'reasoning') { prefix = 'rsn-'; total = 10; }
-    else if (categoryId === 'verbal') { prefix = 'vrb-'; total = 10; }
-    else if (categoryId === 'core-subjects') { prefix = 'cs-'; total = 10; }
-    
-    const completedCount = Object.keys(completedTopics).filter(id => id.startsWith(prefix) && completedTopics[id]).length;
-    return Math.round((completedCount / total) * 100) || 0;
-  };
+  // Load initial data and subscribe to sockets
+  useEffect(() => {
+    connectSocket();
 
-  const toggleComplete = (topic, e) => {
+    const fetchSyncData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try {
+        const res = await syncFetch(`${API_BASE_URL}/api/sync/all`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await res.json();
+        if (result.success) {
+          if (result.data.prepCompleted) {
+            setCompletedTopics(result.data.prepCompleted);
+            localStorage.setItem('prepCompleted', JSON.stringify(result.data.prepCompleted));
+          }
+          if (result.data.bookmarks) {
+            setBookmarks(result.data.bookmarks);
+            localStorage.setItem('bookmarks', JSON.stringify(result.data.bookmarks));
+          }
+        }
+      } catch (err) {
+        console.error('Error loading prep module sync data:', err);
+      }
+    };
+    fetchSyncData();
+
+    const unsubscribeProgress = subscribeToEvent('progressUpdated', (backendProgress) => {
+      console.log('Real-time prep progress update:', backendProgress);
+      if (backendProgress && backendProgress.prepCompleted) {
+        setCompletedTopics(backendProgress.prepCompleted);
+        localStorage.setItem('prepCompleted', JSON.stringify(backendProgress.prepCompleted));
+      }
+    });
+
+    const unsubscribeData = subscribeToEvent('dataUpdated', (backendData) => {
+      console.log('Real-time prep data update:', backendData);
+      if (backendData && backendData.bookmarks) {
+        setBookmarks(backendData.bookmarks);
+        localStorage.setItem('bookmarks', JSON.stringify(backendData.bookmarks));
+      }
+    });
+
+    return () => {
+      unsubscribeProgress();
+      unsubscribeData();
+    };
+  }, []);
+
+  const toggleComplete = async (topic, e) => {
     e.stopPropagation();
     const newStatus = !completedTopics[topic.id];
     const newCompleted = { ...completedTopics, [topic.id]: newStatus };
@@ -42,9 +78,25 @@ const PreparationModule = () => {
     localStorage.setItem('prepCompleted', JSON.stringify(newCompleted));
     setToastMessage(newStatus ? 'Marked as completed' : 'Marked as incomplete');
     setTimeout(() => setToastMessage(''), 3000);
+
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        await syncFetch(`${API_BASE_URL}/api/sync/progress`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ prepCompleted: newCompleted })
+        });
+      } catch (err) {
+        console.error('Error saving prep progress:', err);
+      }
+    }
   };
 
-  const toggleBookmark = (topic, e) => {
+  const toggleBookmark = async (topic, e) => {
     e.stopPropagation();
     const existing = bookmarks.find(b => b.id === topic.id);
     let newBookmarks;
@@ -53,8 +105,10 @@ const PreparationModule = () => {
       setToastMessage('Removed from bookmarks');
     } else {
       const newBookmark = {
-        ...topic,
+        id: topic.id,
+        title: topic.title,
         category: activeCategory.title,
+        time: topic.time || '10 mins',
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
       };
       newBookmarks = [...bookmarks, newBookmark];
@@ -62,8 +116,23 @@ const PreparationModule = () => {
     }
     setBookmarks(newBookmarks);
     localStorage.setItem('bookmarks', JSON.stringify(newBookmarks));
-    
     setTimeout(() => setToastMessage(''), 3000);
+
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        await syncFetch(`${API_BASE_URL}/api/sync/bookmarks`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ bookmarks: newBookmarks })
+        });
+      } catch (err) {
+        console.error('Error saving bookmarks:', err);
+      }
+    }
   };
 
   const categories = [
@@ -220,18 +289,64 @@ const PreparationModule = () => {
     </div>
   );
 
-  const handleDownloadKit = () => {
+  const handleDownloadKit = async () => {
     if (!activeCategory || !activeCategory.zipFile) return;
     
-    const link = document.createElement('a');
-    link.href = activeCategory.zipFile;
-    link.setAttribute('download', `${activeCategory.id}-kit.zip`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
     setToastMessage(`Downloading ${activeCategory.title} Kit...`);
-    setTimeout(() => setToastMessage(''), 3000);
+
+    try {
+      // Check if running in Capacitor Native environment
+      if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+        const { Filesystem, Directory } = await import('@capacitor/filesystem');
+        
+        // Ensure relative paths from public are treated as absolute URLs for fetching
+        const fileUrl = activeCategory.zipFile.startsWith('http') 
+          ? activeCategory.zipFile 
+          : window.location.origin + activeCategory.zipFile;
+
+        // Fetch the file to get its content as blob
+        const response = await fetch(fileUrl);
+        const blob = await response.blob();
+        
+        // Convert blob to base64
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = async () => {
+          const base64data = reader.result.split(',')[1]; // Remove data URL prefix
+          
+          try {
+            await Filesystem.writeFile({
+              path: `Download/${activeCategory.id}-kit.zip`,
+              data: base64data,
+              directory: Directory.ExternalStorage, // usually /storage/emulated/0
+            });
+            setToastMessage(`${activeCategory.title} Kit saved to Downloads!`);
+          } catch (writeErr) {
+            console.error('Filesystem write error:', writeErr);
+            // Fallback for newer Android where ExternalStorage requires scoped storage
+            await Filesystem.writeFile({
+              path: `${activeCategory.id}-kit.zip`,
+              data: base64data,
+              directory: Directory.Documents,
+            });
+            setToastMessage(`${activeCategory.title} Kit saved to Documents!`);
+          }
+        };
+      } else {
+        // Standard Web Download
+        const link = document.createElement('a');
+        link.href = activeCategory.zipFile;
+        link.setAttribute('download', `${activeCategory.id}-kit.zip`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => setToastMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error("Download failed:", error);
+      setToastMessage("Failed to download kit. Please try again.");
+    }
+    
     closeModal();
   };
 
