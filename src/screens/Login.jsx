@@ -95,18 +95,51 @@ const Login = () => {
       }
 
       if (authMode === 'login') {
-        localStorage.removeItem('firstName');
-        localStorage.removeItem('lastName');
-        localStorage.removeItem('phone');
-        localStorage.removeItem('profilePic');
-        
+        // Store core auth data first
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.data));
         localStorage.setItem('userName', data.data.name);
         localStorage.setItem('email', data.data.email);
         localStorage.setItem('role', data.role);
-        if (data.data.phone) localStorage.setItem('phone', data.data.phone);
-        if (data.data.profilePic) localStorage.setItem('profilePic', data.data.profilePic);
+
+        // Restore all persisted user data from backend (profile + targetCompanies)
+        try {
+          const syncRes = await fetch(`${API_BASE_URL}/api/sync/all`, {
+            headers: { 'Authorization': `Bearer ${data.token}` }
+          });
+          const syncData = await syncRes.json();
+          if (syncData.success && syncData.data) {
+            const profile = syncData.data.profile || {};
+            const nameParts = (profile.name || data.data.name || '').trim().split(' ');
+            localStorage.setItem('firstName', nameParts[0] || '');
+            localStorage.setItem('lastName', nameParts.slice(1).join(' ') || '');
+            if (profile.phone) localStorage.setItem('phone', profile.phone);
+            if (profile.profilePic) localStorage.setItem('profilePic', profile.profilePic);
+            if (profile.college) localStorage.setItem('college', profile.college);
+            if (profile.department) localStorage.setItem('department', profile.department);
+            if (profile.year) localStorage.setItem('year', String(profile.year));
+            if (profile.cgpa) localStorage.setItem('cgpa', String(profile.cgpa));
+
+            if (syncData.data.targetCompanies && syncData.data.targetCompanies.length > 0) {
+              localStorage.setItem('targetCompanies', JSON.stringify(syncData.data.targetCompanies));
+            }
+          }
+        } catch (syncErr) {
+          // Sync failed — fall back to login response data
+          console.warn('Sync after login failed, using login data:', syncErr);
+          const nameParts = (data.data.name || '').trim().split(' ');
+          localStorage.setItem('firstName', nameParts[0] || '');
+          localStorage.setItem('lastName', nameParts.slice(1).join(' ') || '');
+          if (data.data.phone) localStorage.setItem('phone', data.data.phone);
+          if (data.data.profilePic) localStorage.setItem('profilePic', data.data.profilePic);
+          if (data.data.college) localStorage.setItem('college', data.data.college);
+          if (data.data.department) localStorage.setItem('department', data.data.department);
+          if (data.data.year) localStorage.setItem('year', String(data.data.year));
+          if (data.data.cgpa) localStorage.setItem('cgpa', String(data.data.cgpa));
+          if (data.data.targetCompanies && data.data.targetCompanies.length > 0) {
+            localStorage.setItem('targetCompanies', JSON.stringify(data.data.targetCompanies));
+          }
+        }
 
         if (data.role === 'admin') {
           navigate('/admin');

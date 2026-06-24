@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Target, Code, Brain, LineChart, Briefcase, Building } from 'lucide-react';
+import { API_BASE_URL } from '../assets/api';
 
 const SetupWizard = () => {
   const navigate = useNavigate();
@@ -28,6 +29,23 @@ const SetupWizard = () => {
       if (selectedCompanies.length < 5) {
         setSelectedCompanies([...selectedCompanies, comp]);
       }
+    }
+  };
+
+  const saveCompaniesToBackend = async (companies) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      await fetch(`${API_BASE_URL}/api/sync/progress`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ targetCompanies: companies })
+      });
+    } catch (err) {
+      console.error('Failed to save target companies to backend:', err);
     }
   };
 
@@ -144,8 +162,9 @@ const SetupWizard = () => {
               <button className="btn-outline flex-1 py-3" onClick={() => setStep(2)}>Back</button>
               <button 
                 className="btn-primary flex-1 py-3" 
-                onClick={() => {
+                onClick={async () => {
                   localStorage.setItem('targetCompanies', JSON.stringify(selectedCompanies));
+                  await saveCompaniesToBackend(selectedCompanies);
                   setStep(4);
                 }}
                 disabled={selectedCompanies.length === 0}
