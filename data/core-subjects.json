@@ -1,0 +1,72 @@
+[
+  {
+    "id": "cs-1",
+    "title": "Data Structures & Algorithms",
+    "importance": "High",
+    "time": "20 Hours",
+    "description": "The foundation of all technical interviews. Master Arrays, Trees, Graphs, and Dynamic Programming."
+  },
+  {
+    "id": "cs-2",
+    "title": "Object-Oriented Programming",
+    "importance": "High",
+    "time": "5 Hours",
+    "description": "Understand core concepts like Inheritance, Polymorphism, Encapsulation, and Abstraction."
+  },
+  {
+    "id": "cs-3",
+    "title": "DBMS",
+    "importance": "High",
+    "time": "6 Hours",
+    "description": "Learn about ACID properties, Normalization, indexing, and transactions."
+  },
+  {
+    "id": "cs-4",
+    "title": "SQL",
+    "importance": "High",
+    "time": "4 Hours",
+    "description": "Master writing complex queries, Joins, Subqueries, and Group By clauses."
+  },
+  {
+    "id": "cs-5",
+    "title": "Operating Systems",
+    "importance": "Medium",
+    "time": "5 Hours",
+    "description": "Understand process management, deadlocks, memory management, and concurrency."
+  },
+  {
+    "id": "cs-6",
+    "title": "Computer Networks",
+    "importance": "Medium",
+    "time": "4 Hours",
+    "description": "Learn the OSI model, TCP/IP, IP addressing, and routing protocols."
+  },
+  {
+    "id": "cs-7",
+    "title": "Software Engineering",
+    "importance": "Low",
+    "time": "2 Hours",
+    "description": "Familiarize yourself with software architectures and testing methodologies."
+  },
+  {
+    "id": "cs-8",
+    "title": "SDLC & Agile",
+    "importance": "Low",
+    "time": "1.5 Hours",
+    "description": "Understand the software development lifecycle and Agile/Scrum practices."
+  },
+  {
+    "id": "cs-9",
+    "title": "Java Fundamentals",
+    "importance": "Medium",
+    "time": "5 Hours",
+    "description": "Brush up on Java syntax, Collections framework, and multi-threading."
+  },
+  {
+    "id": "cs-10",
+    "title": "Python Fundamentals",
+    "importance": "Medium",
+    "time": "4 Hours",
+    "description": "Learn Python basics, list comprehensions, decorators, and data structures."
+  }
+]

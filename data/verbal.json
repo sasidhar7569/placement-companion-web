@@ -1,0 +1,72 @@
+[
+  {
+    "id": "vrb-1",
+    "title": "Reading Comprehension",
+    "importance": "High",
+    "time": "4 Hours",
+    "description": "Improve reading speed and extract key information from complex passages."
+  },
+  {
+    "id": "vrb-2",
+    "title": "Error Spotting",
+    "importance": "High",
+    "time": "2 Hours",
+    "description": "Identify common grammatical errors in sentences."
+  },
+  {
+    "id": "vrb-3",
+    "title": "Sentence Improvement",
+    "importance": "High",
+    "time": "2 Hours",
+    "description": "Enhance sentence structure for better clarity and grammar."
+  },
+  {
+    "id": "vrb-4",
+    "title": "Fill in the Blanks",
+    "importance": "Medium",
+    "time": "1.5 Hours",
+    "description": "Test vocabulary and contextual grammar skills."
+  },
+  {
+    "id": "vrb-5",
+    "title": "Para Jumbles",
+    "importance": "Medium",
+    "time": "2.5 Hours",
+    "description": "Learn strategies to logically sequence jumbled paragraphs."
+  },
+  {
+    "id": "vrb-6",
+    "title": "Synonyms & Antonyms",
+    "importance": "Medium",
+    "time": "3 Hours",
+    "description": "Expand vocabulary by learning word associations."
+  },
+  {
+    "id": "vrb-7",
+    "title": "Vocabulary Building",
+    "importance": "High",
+    "time": "5 Hours",
+    "description": "Master high-frequency words used in placement tests."
+  },
+  {
+    "id": "vrb-8",
+    "title": "Active & Passive Voice",
+    "importance": "Medium",
+    "time": "1.5 Hours",
+    "description": "Understand the rules of voice conversion in English grammar."
+  },
+  {
+    "id": "vrb-9",
+    "title": "Direct & Indirect Speech",
+    "importance": "Medium",
+    "time": "1.5 Hours",
+    "description": "Learn the rules for reporting speech and narration."
+  },
+  {
+    "id": "vrb-10",
+    "title": "Grammar Essentials",
+    "importance": "High",
+    "time": "3 Hours",
+    "description": "Brush up on parts of speech, tenses, articles, and prepositions."
+  }
+]

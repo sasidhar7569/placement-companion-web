@@ -1,0 +1,86 @@
+[
+  {
+    "id": "apt-1",
+    "title": "Percentages",
+    "importance": "High",
+    "time": "2 Hours",
+    "description": "Master the fundamental concept of percentages, essential for almost all other aptitude topics."
+  },
+  {
+    "id": "apt-2",
+    "title": "Profit & Loss",
+    "importance": "High",
+    "time": "2.5 Hours",
+    "description": "Learn to calculate cost price, selling price, markups, and discounts with advanced shortcuts."
+  },
+  {
+    "id": "apt-3",
+    "title": "Time & Work",
+    "importance": "High",
+    "time": "3 Hours",
+    "description": "Understand the concepts of efficiency, combined work, and pipes and cisterns."
+  },
+  {
+    "id": "apt-4",
+    "title": "Time, Speed & Distance",
+    "importance": "High",
+    "time": "3.5 Hours",
+    "description": "Solve problems involving relative speed, trains, and boats & streams."
+  },
+  {
+    "id": "apt-5",
+    "title": "Ratio & Proportion",
+    "importance": "Medium",
+    "time": "2 Hours",
+    "description": "Learn to divide quantities and work with mixtures and alligations."
+  },
+  {
+    "id": "apt-6",
+    "title": "Number System",
+    "importance": "High",
+    "time": "4 Hours",
+    "description": "Deep dive into divisibility rules, remainders, factors, and unit digits."
+  },
+  {
+    "id": "apt-7",
+    "title": "Algebra",
+    "importance": "Medium",
+    "time": "3 Hours",
+    "description": "Brush up on linear equations, quadratic equations, and inequalities."
+  },
+  {
+    "id": "apt-8",
+    "title": "Averages",
+    "importance": "Low",
+    "time": "1.5 Hours",
+    "description": "Learn shortcut methods for finding averages, mixtures, and replacements."
+  },
+  {
+    "id": "apt-9",
+    "title": "Simple & Compound Interest",
+    "importance": "Medium",
+    "time": "2.5 Hours",
+    "description": "Understand interest compounding, effective rates, and installment calculations."
+  },
+  {
+    "id": "apt-10",
+    "title": "Data Interpretation",
+    "importance": "High",
+    "time": "5 Hours",
+    "description": "Analyze and interpret data from pie charts, bar graphs, and line charts."
+  },
+  {
+    "id": "apt-11",
+    "title": "Probability",
+    "importance": "Medium",
+    "time": "2.5 Hours",
+    "description": "Understand concepts of random events, sample spaces, and conditional probability."
+  },
+  {
+    "id": "apt-12",
+    "title": "Permutations & Combinations",
+    "importance": "Medium",
+    "time": "3 Hours",
+    "description": "Master counting principles, arrangements, and selection problems."
+  }
+]

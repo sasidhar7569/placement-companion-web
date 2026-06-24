@@ -1,0 +1,72 @@
+[
+  {
+    "id": "rsn-1",
+    "title": "Syllogisms",
+    "importance": "High",
+    "time": "2 Hours",
+    "description": "Master Venn diagrams to solve statement and conclusion problems."
+  },
+  {
+    "id": "rsn-2",
+    "title": "Blood Relations",
+    "importance": "High",
+    "time": "1.5 Hours",
+    "description": "Learn family tree techniques to map complex relationships quickly."
+  },
+  {
+    "id": "rsn-3",
+    "title": "Coding-Decoding",
+    "importance": "High",
+    "time": "2 Hours",
+    "description": "Identify hidden patterns in letter and number coding."
+  },
+  {
+    "id": "rsn-4",
+    "title": "Direction Sense",
+    "importance": "Medium",
+    "time": "1 Hour",
+    "description": "Solve spatial reasoning problems involving movements and angles."
+  },
+  {
+    "id": "rsn-5",
+    "title": "Seating Arrangements",
+    "importance": "High",
+    "time": "4 Hours",
+    "description": "Tackle complex circular, linear, and matrix arrangement puzzles."
+  },
+  {
+    "id": "rsn-6",
+    "title": "Logical Puzzles",
+    "importance": "High",
+    "time": "3.5 Hours",
+    "description": "Develop analytical skills for solving grid-based logic problems."
+  },
+  {
+    "id": "rsn-7",
+    "title": "Data Sufficiency",
+    "importance": "Medium",
+    "time": "2.5 Hours",
+    "description": "Determine if given statements are sufficient to answer a specific question."
+  },
+  {
+    "id": "rsn-8",
+    "title": "Statement & Assumption",
+    "importance": "Medium",
+    "time": "1.5 Hours",
+    "description": "Analyze implicit premises behind given statements."
+  },
+  {
+    "id": "rsn-9",
+    "title": "Ranking & Order",
+    "importance": "Low",
+    "time": "1 Hour",
+    "description": "Solve problems involving relative positions in a queue or sequence."
+  },
+  {
+    "id": "rsn-10",
+    "title": "Calendar & Clock Problems",
+    "importance": "Medium",
+    "time": "2 Hours",
+    "description": "Master shortcuts for finding days of the week and angles between clock hands."
+  }
+]
