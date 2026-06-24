@@ -122,6 +122,7 @@ const Login = () => {
 
             if (syncData.data.targetCompanies && syncData.data.targetCompanies.length > 0) {
               localStorage.setItem('targetCompanies', JSON.stringify(syncData.data.targetCompanies));
+              window.dispatchEvent(new Event('targetCompaniesUpdated'));
             }
           }
         } catch (syncErr) {
@@ -138,6 +139,7 @@ const Login = () => {
           if (data.data.cgpa) localStorage.setItem('cgpa', String(data.data.cgpa));
           if (data.data.targetCompanies && data.data.targetCompanies.length > 0) {
             localStorage.setItem('targetCompanies', JSON.stringify(data.data.targetCompanies));
+            window.dispatchEvent(new Event('targetCompaniesUpdated'));
           }
         }
 

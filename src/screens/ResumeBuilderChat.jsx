@@ -20,6 +20,9 @@ const ResumeBuilderChat = () => {
   // Current active data for cards
   const [currentSummaryIndex, setCurrentSummaryIndex] = useState(0);
   const [selectedSkills, setSelectedSkills] = useState([]);
+  const [educationData, setEducationData] = useState(null);
+  const [experienceData, setExperienceData] = useState(null);
+  const [projectData, setProjectData] = useState(null);
   
   // Progress tracking
   const [progress, setProgress] = useState({
@@ -87,12 +90,14 @@ const ResumeBuilderChat = () => {
     setInputValue('');
     
     if (stage === 'initial') {
-      // Very basic parsing
-      let role = userText;
-      let company = '';
-      if (userText.toLowerCase().includes(' at ')) {
-        [role, company] = userText.split(/ at /i);
+      if (!userText.toLowerCase().includes(' at ')) {
+        addBotMessage({
+          type: 'retry_card'
+        }, 500);
+        return;
       }
+
+      let [role, company] = userText.split(/ at /i);
       
       setTargetRole(role.trim());
       setTargetCompany(company.trim());
@@ -103,7 +108,7 @@ const ResumeBuilderChat = () => {
 
       addBotMessage({
         type: 'text',
-        text: `Great! I will now help you build an ATS-friendly resume optimized for a **${role.trim()}** role${company ? ` targeting companies like **${company.trim()}**` : ''}.`
+        text: `Great! I will now help you build an ATS-friendly resume optimized for a **${role.trim()}** role targeting companies like **${company.trim()}**.`
       }, 800);
 
       addBotMessage({
@@ -176,6 +181,7 @@ const ResumeBuilderChat = () => {
   };
 
   const handleAcceptEducation = (eduData) => {
+    setEducationData(eduData);
     setProgress(p => ({ ...p, education: true }));
     setStage('experience_check');
     
@@ -213,6 +219,7 @@ const ResumeBuilderChat = () => {
   };
 
   const handleAcceptExperience = (expData) => {
+    setExperienceData(expData);
     setProgress(p => ({ ...p, experience: true }));
     setStage('projects');
     
@@ -237,6 +244,7 @@ const ResumeBuilderChat = () => {
   };
 
   const handleAcceptProject = (projData) => {
+    setProjectData(projData);
     setProgress(p => ({ ...p, projects: true }));
     setStage('certifications');
     
@@ -278,8 +286,12 @@ const ResumeBuilderChat = () => {
     setStage('done');
     addBotMessage({
       type: 'text',
-      text: "🎉 Congratulations! We have successfully gathered and optimized all sections of your resume. You can now preview and download your complete ATS-friendly resume."
+      text: "🎉 Congratulations! We have successfully gathered and optimized all sections of your resume. Here is your tailored resume content to copy and paste:"
     }, 500);
+    
+    addBotMessage({
+      type: 'final_resume'
+    }, 1500);
   };
 
   // --- Renderers for Rich Messages ---
@@ -577,6 +589,68 @@ const ResumeBuilderChat = () => {
       case 'project_result': return renderProjectResult(msg);
       case 'certifications_card': return renderCertificationsCard(msg);
       case 'keywords_card': return renderKeywordsCard(msg);
+      case 'retry_card': 
+        return (
+          <div className="bg-slate-800 border border-red-500/50 rounded-2xl p-5 shadow-lg w-full max-w-sm">
+            <h3 className="text-red-400 font-bold mb-3">Response Failed</h3>
+            <p className="text-slate-300 text-sm mb-4">Please provide your input in the format: <strong>Role at Company</strong></p>
+            <button 
+              onClick={() => {
+                setMessages([{
+                  id: Date.now(),
+                  sender: 'bot',
+                  type: 'text',
+                  text: `Good day! I'm your ATS Resume Assistant. I'll guide you step-by-step to build a highly optimized resume.\n\nTo get started, please tell me your **Target Job Role** and **Target Company** (e.g., "Java Developer at TCS").`,
+                  time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                }]);
+              }}
+              className="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-xl text-sm font-bold transition"
+            >
+              Try Again
+            </button>
+          </div>
+        );
+      case 'final_resume':
+        const summaryText = roleData ? roleData.summaries[currentSummaryIndex] : '';
+        const resumeText = `
+Resume
+------------------------
+Target Role: ${targetRole}
+Target Company: ${targetCompany}
+
+SUMMARY
+${summaryText}
+
+SKILLS
+Programming: ${selectedSkills.join(', ')}
+
+EDUCATION
+${educationData?.degree} - ${educationData?.college}
+Graduation Year: ${educationData?.year} | CGPA: ${educationData?.cgpa}
+${experienceData ? `\nEXPERIENCE\n${experienceData.title} at ${experienceData.company}\nDuration: ${experienceData.duration}\n- Engineered scalable solutions and optimized system performance.\n- Collaborated with cross-functional teams.\n- ${experienceData.desc}` : ''}${projectData ? `\nPROJECTS\n${projectData.title}\nTech: ${projectData.tech}\n- ${projectData.desc}\n- Implemented secure data handling and responsive design principles.` : ''}
+
+CERTIFICATIONS
+${roleData?.certifications.slice(0,2).join('\n')}
+        `.trim();
+
+        return (
+          <div className="bg-slate-800 border border-primary/30 rounded-2xl p-6 shadow-lg w-full max-w-2xl relative group">
+            <button 
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition"
+              onClick={() => {
+                navigator.clipboard.writeText(resumeText);
+                alert('Resume copied to clipboard!');
+              }}
+              title="Copy to Clipboard"
+            >
+              <Copy size={20} />
+            </button>
+            <h3 className="text-white font-bold text-xl mb-4 border-b border-slate-700 pb-2">Your Tailored Resume</h3>
+            <div className="text-slate-300 text-sm whitespace-pre-wrap font-mono bg-slate-900 p-4 rounded-xl select-all border border-slate-700">
+              {resumeText}
+            </div>
+          </div>
+        );
       default: return null;
     }
   };

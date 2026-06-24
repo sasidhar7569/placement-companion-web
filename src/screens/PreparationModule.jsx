@@ -285,8 +285,7 @@ const PreparationModule = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
                   key={topic.id} 
-                  onClick={() => navigate(`/topic/${topic.id}`)}
-                  className="bg-slate-800/50 border border-slate-700 hover:border-slate-500 rounded-xl p-5 transition-all hover:shadow-lg group cursor-pointer"
+                  className="bg-slate-800/50 border border-slate-700 hover:border-slate-500 rounded-xl p-5 transition-all hover:shadow-lg group"
                 >
                   <div className="flex justify-between items-start mb-3">
                     <h3 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors">{topic.title}</h3>
