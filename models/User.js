@@ -50,7 +50,7 @@ const userSchema = new mongoose.Schema({
 
   bookmarks: {
     type: mongoose.Schema.Types.Mixed,
-    default: {}
+    default: []
   },
 
   dailyTasks: {

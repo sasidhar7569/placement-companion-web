@@ -285,7 +285,9 @@ const TopicDetail = () => {
   const [bookmarks, setBookmarks] = useState(() => {
     try {
       const saved = localStorage.getItem('bookmarks');
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
       return [];
     }

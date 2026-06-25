@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite --host",
+    "predeploy": "npm run build",
     "start:backend": "node server.cjs",
     "start:frontend": "npm run dev",
     "start:all": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",

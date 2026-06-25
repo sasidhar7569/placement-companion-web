@@ -255,8 +255,8 @@ app.get("/api/sync/all", authenticateToken, async (req, res) => {
                 cgpa: user.cgpa,
                 skills: user.skills
             },
-            targetCompanies: user.targetCompanies,
-            bookmarks: user.bookmarks,
+            targetCompanies: Array.isArray(user.targetCompanies) ? user.targetCompanies : [],
+            bookmarks: Array.isArray(user.bookmarks) ? user.bookmarks : [],
             dailyTasks: user.dailyTasks,
             prepCompleted: user.prepProgress,
             codingProgress: user.codingProgress,
