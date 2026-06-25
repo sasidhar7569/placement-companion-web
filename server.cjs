@@ -238,25 +238,31 @@ app.post("/login", async (req, res) => {
 // --- ADMIN MIGRATION ROUTES ---
 app.post("/api/admin/fix-sync-fields", async (req, res) => {
     try {
-        const users = await User.find();
-        let updatedCount = 0;
+        const results = {};
 
-        for (let user of users) {
-            let updateObj = {};
-            if (user.get('targetCompanies') === undefined) updateObj.targetCompanies = [];
-            if (user.get('dailyTasks') === undefined) updateObj.dailyTasks = {};
-            if (user.get('bookmarks') === undefined) updateObj.bookmarks = {};
-            if (user.get('prepProgress') === undefined) updateObj.prepProgress = {};
-            if (user.get('codingProgress') === undefined) updateObj.codingProgress = {};
-            if (user.get('scheduleEvents') === undefined) updateObj.scheduleEvents = {};
+        const resTC = await User.updateMany({ targetCompanies: { $exists: false } }, { $set: { targetCompanies: [] } });
+        results.targetCompanies = resTC.modifiedCount;
 
-            if (Object.keys(updateObj).length > 0) {
-                await User.updateOne({ _id: user._id }, { $set: updateObj });
-                updatedCount++;
-            }
-        }
+        const resDT = await User.updateMany({ dailyTasks: { $exists: false } }, { $set: { dailyTasks: {} } });
+        results.dailyTasks = resDT.modifiedCount;
 
-        res.status(200).json({ success: true, message: `Migration complete. Modified ${updatedCount} users.` });
+        const resBM = await User.updateMany({ bookmarks: { $exists: false } }, { $set: { bookmarks: {} } });
+        results.bookmarks = resBM.modifiedCount;
+
+        const resPP = await User.updateMany({ prepProgress: { $exists: false } }, { $set: { prepProgress: {} } });
+        results.prepProgress = resPP.modifiedCount;
+
+        const resCP = await User.updateMany({ codingProgress: { $exists: false } }, { $set: { codingProgress: {} } });
+        results.codingProgress = resCP.modifiedCount;
+
+        const resSE = await User.updateMany({ scheduleEvents: { $exists: false } }, { $set: { scheduleEvents: {} } });
+        results.scheduleEvents = resSE.modifiedCount;
+
+        res.status(200).json({ 
+            success: true, 
+            message: "Migration complete.",
+            modifiedCounts: results
+        });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
