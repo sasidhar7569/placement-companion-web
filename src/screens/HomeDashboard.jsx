@@ -26,16 +26,49 @@ const HomeDashboard = () => {
   const daysArr = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const todayName = daysArr[dDate.getDay()];
 
+  const generateRandomTasks = (dayName) => {
+    const codingTasks = [
+      "Solve 2 Medium Array problems",
+      "Complete 1 Hard Graph problem",
+      "Practice DP for 30 mins",
+      "Solve 3 Easy String questions",
+      "Review Trees and write a DFS"
+    ];
+    const aptitudeTasks = [
+      "Complete Quant Test",
+      "Practice Logical Reasoning",
+      "Solve 10 Probability questions",
+      "Review Data Interpretation",
+      "Take a Speed Math quiz"
+    ];
+    const communicationTasks = [
+      "Record 1 Mock Interview Answer",
+      "Read 1 Technical Article",
+      "Practice HR questions",
+      "Review Email Etiquette",
+      "2-minute self-introduction"
+    ];
+  
+    const randomCoding = codingTasks[Math.floor(Math.random() * codingTasks.length)];
+    const randomAptitude = aptitudeTasks[Math.floor(Math.random() * aptitudeTasks.length)];
+    const randomComm = communicationTasks[Math.floor(Math.random() * communicationTasks.length)];
+  
+    return [
+      { id: 1, title: randomCoding, type: 'Coding', duration: '45 mins', completed: false, link: '/coding' },
+      { id: 2, title: randomAptitude, type: 'Learning', duration: '30 mins', completed: false, link: '/topic/1' },
+      { id: 3, title: randomComm, type: 'Learning', duration: '15 mins', completed: false, link: '/topic/2' }
+    ];
+  };
+
   const getInitialTasks = () => {
-    return isNewUser 
-      ? [
-          { id: 1, title: 'Set up your Profile', type: 'Learning', duration: '5 mins', completed: false, link: '/profile' },
-          { id: 2, title: 'Watch Intro to Placement Prep', type: 'Learning', duration: '15 mins', completed: false, link: '/topic/1' },
-        ]
-      : [
-          { id: 1, title: `Complete ${todayName} Practice Module`, type: 'Learning', duration: '45 mins', completed: false, link: '/topic/1' },
-          { id: 2, title: 'Solve 2 Medium Leetcode questions', type: 'Coding', duration: '60 mins', completed: false, link: '/coding' }
-        ];
+    if (isNewUser) {
+      return [
+        { id: 1, title: 'Set up your Profile', type: 'Learning', duration: '5 mins', completed: false, link: '/profile' },
+        { id: 2, title: 'Watch Intro to Placement Prep', type: 'Learning', duration: '15 mins', completed: false, link: '/topic/1' },
+      ];
+    }
+    // Return empty initially, let useEffect populate or generate
+    return [];
   };
 
   const [dailyTasks, setDailyTasks] = useState(getInitialTasks);
@@ -84,20 +117,32 @@ const HomeDashboard = () => {
             localStorage.setItem('profilePic', profile.profilePic);
           }
 
-          if (backendTasks && backendTasks[todayName]) {
+          if (backendTasks && backendTasks[todayName] && backendTasks[todayName].length > 0) {
             setDailyTasks(backendTasks[todayName]);
           } else {
-            // Fallback to default tasks
-            const defaultTasks = isNewUser 
-              ? [
+            // Fallback to default tasks or generate random ones
+            let newTasks;
+            if (isNewUser) {
+              newTasks = [
                   { id: 1, title: 'Set up your Profile', type: 'Learning', duration: '5 mins', completed: false, link: '/profile' },
                   { id: 2, title: 'Watch Intro to Placement Prep', type: 'Learning', duration: '15 mins', completed: false, link: '/topic/1' },
-                ]
-              : [
-                  { id: 1, title: `Complete ${todayName} Practice Module`, type: 'Learning', duration: '45 mins', completed: false, link: '/topic/1' },
-                  { id: 2, title: 'Solve 2 Medium Leetcode questions', type: 'Coding', duration: '60 mins', completed: false, link: '/coding' }
-                ];
-            setDailyTasks(defaultTasks);
+              ];
+            } else {
+              newTasks = generateRandomTasks(todayName);
+            }
+            setDailyTasks(newTasks);
+            
+            // Immediately sync the generated tasks to backend so it persists across devices
+            const fullTasksObj = backendTasks || {};
+            fullTasksObj[todayName] = newTasks;
+            syncFetch(`${API_BASE_URL}/api/sync/tasks`, {
+               method: 'PATCH',
+               headers: {
+                 'Content-Type': 'application/json',
+                 'Authorization': `Bearer ${token}`
+               },
+               body: JSON.stringify({ dailyTasks: fullTasksObj })
+            }).catch(e => console.error('Error syncing random tasks:', e));
           }
 
           if (backendEvents) {
@@ -113,9 +158,13 @@ const HomeDashboard = () => {
             localStorage.setItem('prepCompleted', JSON.stringify(prepCompleted));
           }
 
-          if (backendTargets) {
-            localStorage.setItem('targetCompanies', JSON.stringify(backendTargets));
-            setTargetCompanies(backendTargets);
+          const targetComps = backendTargets || 
+                              (result.data.progress && result.data.progress.targetCompanies) || 
+                              (profile && profile.targetCompanies);
+
+          if (targetComps) {
+            localStorage.setItem('targetCompanies', JSON.stringify(targetComps));
+            setTargetCompanies(targetComps);
           }
 
           if (codingProgress) {

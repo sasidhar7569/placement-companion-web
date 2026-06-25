@@ -148,10 +148,29 @@ app.post("/register", async (req, res) => {
 
         await user.save();
 
+        const userData = {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            college: user.college,
+            department: user.department,
+            year: user.year,
+            cgpa: user.cgpa,
+            skills: user.skills,
+            targetCompanies: user.targetCompanies,
+            bookmarks: user.bookmarks,
+            dailyTasks: user.dailyTasks,
+            prepProgress: user.prepProgress,
+            prepCompleted: user.prepProgress, // Alias for frontend
+            codingProgress: user.codingProgress,
+            scheduleEvents: user.scheduleEvents
+        };
+
         res.status(201).json({
             success: true,
             message: "User registered successfully",
-            data: user
+            data: userData
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -185,13 +204,169 @@ app.post("/login", async (req, res) => {
             { expiresIn: "1d" }
         );
 
+        const userData = {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            college: user.college,
+            department: user.department,
+            year: user.year,
+            cgpa: user.cgpa,
+            skills: user.skills,
+            targetCompanies: user.targetCompanies,
+            bookmarks: user.bookmarks,
+            dailyTasks: user.dailyTasks,
+            prepProgress: user.prepProgress,
+            prepCompleted: user.prepProgress, // Alias for frontend
+            codingProgress: user.codingProgress,
+            scheduleEvents: user.scheduleEvents
+        };
+
         res.status(200).json({
             success: true,
             message: "Login successful",
             token,
             role: user.role,
-            data: user
+            data: userData
         });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// --- ADMIN MIGRATION ROUTES ---
+app.post("/api/admin/fix-sync-fields", async (req, res) => {
+    try {
+        const users = await User.find();
+        let updatedCount = 0;
+
+        for (let user of users) {
+            let updateObj = {};
+            if (user.get('targetCompanies') === undefined) updateObj.targetCompanies = [];
+            if (user.get('dailyTasks') === undefined) updateObj.dailyTasks = {};
+            if (user.get('bookmarks') === undefined) updateObj.bookmarks = {};
+            if (user.get('prepProgress') === undefined) updateObj.prepProgress = {};
+            if (user.get('codingProgress') === undefined) updateObj.codingProgress = {};
+            if (user.get('scheduleEvents') === undefined) updateObj.scheduleEvents = {};
+
+            if (Object.keys(updateObj).length > 0) {
+                await User.updateOne({ _id: user._id }, { $set: updateObj });
+                updatedCount++;
+            }
+        }
+
+        res.status(200).json({ success: true, message: `Migration complete. Modified ${updatedCount} users.` });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// --- SYNC API ENDPOINTS ---
+
+app.get("/api/sync/all", authenticateToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.userId).select("-password");
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        const data = {
+            profile: {
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                profilePic: user.profilePic,
+                college: user.college,
+                department: user.department,
+                year: user.year,
+                cgpa: user.cgpa,
+                skills: user.skills
+            },
+            targetCompanies: user.targetCompanies,
+            bookmarks: user.bookmarks,
+            dailyTasks: user.dailyTasks,
+            prepCompleted: user.prepProgress,
+            codingProgress: user.codingProgress,
+            scheduleEvents: user.scheduleEvents
+        };
+
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+app.patch("/api/sync/profile", authenticateToken, async (req, res) => {
+    try {
+        const { targetCompanies } = req.body;
+        const updateData = {};
+        if (targetCompanies !== undefined) updateData.targetCompanies = targetCompanies;
+        
+        const user = await User.findByIdAndUpdate(req.userId, updateData, { new: true });
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        res.status(200).json({ success: true, data: user });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+app.patch("/api/sync/progress", authenticateToken, async (req, res) => {
+    try {
+        const { prepCompleted, codingProgress, targetCompanies } = req.body;
+        const updateData = {};
+        if (prepCompleted !== undefined) updateData.prepProgress = prepCompleted;
+        if (codingProgress !== undefined) updateData.codingProgress = codingProgress;
+        if (targetCompanies !== undefined) updateData.targetCompanies = targetCompanies;
+
+        const user = await User.findByIdAndUpdate(req.userId, updateData, { new: true });
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        res.status(200).json({ success: true, data: user });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+app.patch("/api/sync/tasks", authenticateToken, async (req, res) => {
+    try {
+        const { dailyTasks } = req.body;
+        const updateData = {};
+        if (dailyTasks !== undefined) updateData.dailyTasks = dailyTasks;
+
+        const user = await User.findByIdAndUpdate(req.userId, updateData, { new: true });
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        res.status(200).json({ success: true, data: user });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+app.patch("/api/sync/bookmarks", authenticateToken, async (req, res) => {
+    try {
+        const { bookmarks } = req.body;
+        const updateData = {};
+        if (bookmarks !== undefined) updateData.bookmarks = bookmarks;
+
+        const user = await User.findByIdAndUpdate(req.userId, updateData, { new: true });
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        res.status(200).json({ success: true, data: user });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+app.patch("/api/sync/planner", authenticateToken, async (req, res) => {
+    try {
+        const { scheduleEvents } = req.body;
+        const updateData = {};
+        if (scheduleEvents !== undefined) updateData.scheduleEvents = scheduleEvents;
+
+        const user = await User.findByIdAndUpdate(req.userId, updateData, { new: true });
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        res.status(200).json({ success: true, data: user });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

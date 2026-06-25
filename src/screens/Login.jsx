@@ -54,6 +54,14 @@ const Login = () => {
       return;
     }
 
+    if (authMode === 'register') {
+      const passwordRegex = /^(?=.*[0-9\W]).{8,}$/;
+      if (!passwordRegex.test(password)) {
+        alert("Password must be at least 8 characters long and contain at least one number or symbol.");
+        return;
+      }
+    }
+
     setIsLoading(true);
     try {
       const url =
@@ -120,8 +128,12 @@ const Login = () => {
             if (profile.year) localStorage.setItem('year', String(profile.year));
             if (profile.cgpa) localStorage.setItem('cgpa', String(profile.cgpa));
 
-            if (syncData.data.targetCompanies && syncData.data.targetCompanies.length > 0) {
-              localStorage.setItem('targetCompanies', JSON.stringify(syncData.data.targetCompanies));
+            const targetComps = syncData.data.targetCompanies || 
+                                (syncData.data.progress && syncData.data.progress.targetCompanies) || 
+                                (syncData.data.profile && syncData.data.profile.targetCompanies) || [];
+            
+            if (targetComps && targetComps.length > 0) {
+              localStorage.setItem('targetCompanies', JSON.stringify(targetComps));
               window.dispatchEvent(new Event('targetCompaniesUpdated'));
             }
           }
@@ -137,8 +149,13 @@ const Login = () => {
           if (data.data.department) localStorage.setItem('department', data.data.department);
           if (data.data.year) localStorage.setItem('year', String(data.data.year));
           if (data.data.cgpa) localStorage.setItem('cgpa', String(data.data.cgpa));
-          if (data.data.targetCompanies && data.data.targetCompanies.length > 0) {
-            localStorage.setItem('targetCompanies', JSON.stringify(data.data.targetCompanies));
+          
+          const targetCompsFallback = data.data.targetCompanies || 
+                                      (data.data.progress && data.data.progress.targetCompanies) || 
+                                      (data.data.profile && data.data.profile.targetCompanies) || [];
+                                      
+          if (targetCompsFallback && targetCompsFallback.length > 0) {
+            localStorage.setItem('targetCompanies', JSON.stringify(targetCompsFallback));
             window.dispatchEvent(new Event('targetCompaniesUpdated'));
           }
         }

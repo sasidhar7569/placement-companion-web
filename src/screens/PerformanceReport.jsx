@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, TrendingUp, BarChart2, AlertTriangle, Target, CheckCircle } from 'lucide-react';
+import BackButton from '../components/BackButton';
 
 const PerformanceReport = () => {
   const navigate = useNavigate();
@@ -8,9 +9,9 @@ const PerformanceReport = () => {
   return (
     <div className="page-container animate-fade-in">
       <div className="mb-6 flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-secondary hover:text-primary transition-colors">
+        <BackButton className="flex items-center gap-2 text-secondary hover:text-primary transition-colors">
           <ArrowLeft size={18} /> Back
-        </button>
+        </BackButton>
       </div>
 
       <div className="mb-8">

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { BookOpen, HelpCircle, ArrowLeft, ChevronRight, Calculator, CheckCircle, Lightbulb, AlertTriangle, Bookmark } from 'lucide-react';
 import { practiceData } from '../data/practiceData';
 import { API_BASE_URL, syncFetch } from '../assets/api';
+import BackButton from '../components/BackButton';
 
 const topicDataMap = {
   '1': {
@@ -346,9 +347,9 @@ const TopicDetail = () => {
   return (
     <div className="page-container">
       <div className="mb-6">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-secondary hover:text-primary transition-colors mb-4">
+        <BackButton className="flex items-center gap-2 text-secondary hover:text-primary transition-colors mb-4">
           <ArrowLeft size={18} /> Back to Topics
-        </button>
+        </BackButton>
         <div className="flex justify-between items-end flex-wrap gap-4">
           <div>
             <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-xs font-bold mb-3 inline-block">

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Upload, FileText, CheckCircle, XCircle, AlertCircle, RefreshCw, BarChart } from 'lucide-react';
+import BackButton from '../components/BackButton';
 import { useNavigate } from 'react-router-dom';
 
 const ATSChecker = () => {
@@ -66,12 +67,9 @@ const ATSChecker = () => {
 
       {/* Header */}
       <header className="flex items-center gap-4 mb-8 relative z-10">
-        <button 
-          onClick={() => navigate(-1)}
-          className="p-2 hover:bg-slate-800 rounded-full transition-colors text-slate-300"
-        >
+        <BackButton className="p-2 hover:bg-slate-800 rounded-full transition-colors text-slate-300">
           <ArrowLeft size={24} />
-        </button>
+        </BackButton>
         <div>
           <h1 className="text-3xl font-bold text-textMain">ATS Score Checker</h1>
           <p className="text-secondary text-sm mt-1">Optimize your resume for applicant tracking systems.</p>

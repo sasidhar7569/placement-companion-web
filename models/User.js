@@ -44,44 +44,34 @@ const userSchema = new mongoose.Schema({
   },
 
   targetCompanies: {
-    type: [String],
+    type: mongoose.Schema.Types.Mixed,
     default: []
   },
 
-  bookmarks: [{
-    type: { type: String },
-    itemId: String,
-    title: String,
-    createdAt: { type: Date, default: Date.now }
-  }],
+  bookmarks: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
 
-  dailyTasks: [{
-    taskId: String,
-    title: String,
-    completed: { type: Boolean, default: false },
-    completedAt: Date
-  }],
+  dailyTasks: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
 
-  prepProgress: [{
-    category: String,
-    topic: String,
-    completed: { type: Boolean, default: false },
-    completedAt: Date
-  }],
+  prepProgress: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
 
-  codingProgress: [{
-    category: String,
-    topic: String,
-    completed: { type: Boolean, default: false },
-    completedAt: Date
-  }],
+  codingProgress: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
 
-  scheduleEvents: [{
-    title: String,
-    startDate: Date,
-    endDate: Date,
-    status: String
-  }]
+  scheduleEvents: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  }
 }, {
   timestamps: true
 });

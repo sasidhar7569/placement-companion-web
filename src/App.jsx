@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import WebLayout from './components/WebLayout';
 import { API_BASE_URL } from './assets/api';
+import AppBackHandler from './components/AppBackHandler';
 
 // Screens
 import HomeDashboard from './screens/HomeDashboard';
@@ -42,6 +43,7 @@ const App = () => {
 
   return (
     <HashRouter>
+      <AppBackHandler />
       <Routes>
         {/* Onboarding & Login Flow */}
         <Route path="/login" element={<Login />} />

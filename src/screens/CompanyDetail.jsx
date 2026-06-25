@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Building, Map, ChevronRight, ArrowLeft, Brain, Code, Terminal, Server, Star, Users } from 'lucide-react';
+import { Building, Map, ChevronRight, ArrowLeft, Brain, Code, Terminal, Server, Star, Users, ExternalLink, Bookmark, CheckCircle, MessageSquare, Clock, MapPin } from 'lucide-react';
+import BackButton from '../components/BackButton';
 
 const companiesData = {
   google: {
@@ -298,9 +299,9 @@ const CompanyDetail = () => {
   return (
     <div className="page-container">
       <div className="mb-6">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-secondary hover:text-primary transition-colors mb-4">
+        <BackButton className="flex items-center gap-2 text-secondary hover:text-primary transition-colors mb-4">
           <ArrowLeft size={18} /> Back to Companies
-        </button>
+        </BackButton>
         <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
           <div className="w-24 h-24 rounded-2xl flex items-center justify-center shadow-lg font-bold text-4xl" style={{ background: `${company.color}20`, color: company.color, border: `1px solid ${company.color}40` }}>
             {company.logo}

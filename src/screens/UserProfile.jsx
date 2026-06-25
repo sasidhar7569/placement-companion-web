@@ -194,6 +194,7 @@ const UserProfile = () => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
+        // Original progress sync
         await syncFetch(`${API_BASE_URL}/api/sync/progress`, {
           method: 'PATCH',
           headers: {
@@ -202,8 +203,34 @@ const UserProfile = () => {
           },
           body: JSON.stringify({ targetCompanies: companies })
         });
+
+        // Also try profile sync in case backend expects it there
+        await syncFetch(`${API_BASE_URL}/api/sync/profile`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ targetCompanies: companies })
+        });
+
+        // Also try direct user update if possible
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const u = JSON.parse(userStr);
+          if (u._id) {
+            await fetch(`${API_BASE_URL}/users/${u._id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ targetCompanies: companies })
+            }).catch(() => {});
+          }
+        }
       } catch (err) {
-        console.error('Error saving target companies:', err);
+        console.error('Failed to sync target companies', err);
       }
     }
   };
@@ -557,7 +584,7 @@ const UserProfile = () => {
                 </div>
                 <p className="text-sm text-secondary mb-8">{selectedCompanies.length}/5 Selected</p>
 
-                {selectedCompanies.length === 5 && (
+                {selectedCompanies.length > 0 && (
                   <button 
                     className="mb-8 btn-primary flex items-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
                     onClick={async () => {

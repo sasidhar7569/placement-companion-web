@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate, NavLink } from 'react-router-dom';
 import { ChevronLeft, Search, User, Menu, X, Home, BookOpen, Code, Briefcase, Target, Bookmark } from 'lucide-react';
 import Sidebar from './Sidebar';
+import BackButton from './BackButton';
 import BottomNav from './BottomNav';
 import { API_BASE_URL } from '../assets/api';
 
@@ -101,8 +102,6 @@ const WebLayout = () => {
     return 'PlacementPro';
   };
 
-  const showBackButton = location.pathname.split('/').filter(Boolean).length > 1 && !location.pathname.includes('/home');
-
   return (
     <div className="app-container">
       <Sidebar />
@@ -113,11 +112,7 @@ const WebLayout = () => {
             <button className="md:hidden icon-btn" onClick={() => setIsMobileMenuOpen(true)} style={{ padding: '8px' }}>
               <Menu size={24} />
             </button>
-            {showBackButton && (
-              <button className="icon-btn" onClick={() => navigate(-1)} style={{ padding: '8px' }}>
-                <ChevronLeft size={24} />
-              </button>
-            )}
+            <BackButton className="icon-btn" style={{ padding: '8px' }} />
             <h2 className="text-xl hidden sm:block">{getPageTitle()}</h2>
           </div>
           

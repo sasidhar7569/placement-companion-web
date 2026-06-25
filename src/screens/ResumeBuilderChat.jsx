@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, ArrowLeft, FileText, CheckCircle2, RefreshCw, Copy, Check, Briefcase, GraduationCap, Code, Award, Target, Star, Loader2, Terminal } from 'lucide-react';
+import { Send, Bot, User, FileText, Check, ChevronRight, Download, Eye, Sparkles, Wand2, X, Briefcase, GraduationCap, Code, Award, Target, Star, Loader2, Terminal, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import BackButton from '../components/BackButton';
 import { getRoleData } from '../data/resumeData';
 
 const ResumeBuilderChat = () => {
@@ -666,12 +667,9 @@ ${roleData?.certifications.slice(0,2).join('\n')}
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-800/80 backdrop-blur-md">
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate(-1)}
-            className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-300"
-          >
+          <BackButton className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-300">
             <ArrowLeft size={20} />
-          </button>
+          </BackButton>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
               <Bot size={24} />
@@ -685,12 +683,7 @@ ${roleData?.certifications.slice(0,2).join('\n')}
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button className="px-4 py-2 bg-primary/20 text-primary rounded-lg text-sm font-medium hover:bg-primary/30 transition flex items-center gap-2">
-            <FileText size={16} />
-            View Resume
-          </button>
-        </div>
+
       </header>
 
       {/* Main Layout */}

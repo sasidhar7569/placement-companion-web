@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Play, Settings, CheckCircle, Maximize, Minimize } from 'lucide-react';
+import BackButton from '../components/BackButton';
 
 const CodeEditor = () => {
   const navigate = useNavigate();
@@ -25,9 +26,9 @@ const CodeEditor = () => {
     <div className={`flex flex-col bg-slate-800/80 ${isFullscreen ? 'fixed inset-0 z-50' : 'h-screen'}`}>
       <div className="bg-slate-800/50 border-b px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
-          <button className="p-2 hover:bg-slate-700 rounded-lg text-secondary transition-colors" onClick={() => navigate(-1)}>
+          <BackButton className="p-2 hover:bg-slate-700 rounded-lg text-secondary transition-colors">
             <ChevronLeft size={20} />
-          </button>
+          </BackButton>
           <h2 className="font-bold text-textMain hidden md:block">1. Two Sum</h2>
         </div>
         

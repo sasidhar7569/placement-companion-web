@@ -17,6 +17,7 @@
     "test:all": "npm run test:web && npm run test:mobile"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.0",
     "@capacitor/filesystem": "^8.1.2",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
